@@ -1,0 +1,22 @@
+{
+  "crons": [
+    {
+      "path": "/api/refresh",
+      "schedule": "0 13 * * *"
+    }
+  ],
+  "functions": {
+    "api/refresh.js": {
+      "maxDuration": 60
+    },
+    "api/submit.js": {
+      "maxDuration": 30
+    },
+    "api/summarize.js": {
+      "maxDuration": 30
+    },
+    "api/feedback.js": {
+      "maxDuration": 15
+    }
+  }
+}

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My News</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root{
+    --ink-0:#EFECE2;
+    --ink-1:#E6E2D3;
+    --surface:#FBFAF6;
+    --surface-raised:#FFFFFF;
+    --hairline:#D9D4C2;
+    --text-hi:#211F19;
+    --text-mid:#66604F;
+    --text-low:#95907C;
+    --signal:#1E6F60;
+    --signal-soft:#D9EAE5;
+    --signal-dim:#DCE9E4;
+    --amber:#A85A1C;
+    --radius:6px;
+    --font: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ink-0);color:var(--text-hi);font-family:var(--font);}
+  body{min-height:100vh;}
+  ::selection{background:var(--signal-soft);color:var(--text-hi);}
+
+  a{color:var(--signal);}
+  a:hover{color:var(--text-hi);}
+
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* ---------- Left rail ---------- */
+  .rail{
+    width:252px;
+    flex-shrink:0;
+    background:var(--ink-1);
+    border-right:1px solid var(--hairline);
+    padding:30px 20px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:9px;
+    margin-bottom:3px;
+    padding-bottom:16px;
+    border-bottom:2px solid var(--text-hi);
+  }
+  .brand-mark{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--signal);
+    flex-shrink:0;
+    margin-bottom:3px;
+  }
+  .brand-name{
+    font-family:var(--font-serif);
+    font-size:23px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+
+  .rail-section-label{
+    font-size:11px;
+    color:var(--text-low);
+    margin:20px 0 10px 10px;
+  }
+
+  .bucket-list{list-style:none;margin:0;padding:0;}
+  .bucket-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:9px 10px 9px 12px;
+    border-left:2px solid transparent;
+    cursor:pointer;
+    color:var(--text-mid);
+    font-size:13.5px;
+    line-height:1.3;
+    margin-bottom:1px;
+    transition:background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .bucket-item:hover{background:var(--surface);color:var(--text-hi);}
+  .bucket-item.active{background:var(--surface-raised);color:var(--text-hi);border-left-color:var(--signal);}
+  .bucket-item.active .bucket-count{color:var(--signal);}
+  .bucket-count{
+    font-size:11.5px;
+    color:var(--text-low);
+    min-width:18px;
+    text-align:right;
+  }
+  .bucket-unread{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--amber);
+    flex-shrink:0;
+  }
+  .bucket-label{display:flex;align-items:center;gap:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .rail-footer{
+    margin-top:28px;
+    padding-top:16px;
+    border-top:1px solid var(--hairline);
+  }
+  .refresh-btn{
+    width:100%;
+    padding:10px 12px;
+    background:var(--text-hi);
+    border:1px solid var(--text-hi);
+    color:var(--surface-raised);
+    font-size:13px;
+    font-weight:600;
+    border-radius:var(--radius);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:opacity .12s ease;
+    font-family:var(--font);
+  }
+  .refresh-btn:hover{opacity:.85;}
+  .refresh-btn:disabled{opacity:.5;cursor:default;}
+  .refresh-btn .spin{
+    width:12px;height:12px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+    animation:spin .7s linear infinite;
+    display:none;
+  }
+  .refresh-btn.loading .spin{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .last-refresh{
+    font-size:11px;
+    color:var(--text-low);
+    text-align:center;
+    margin-top:10px;
+    line-height:1.45;
+  }
+  .progress-track{
+    height:2px;
+    background:var(--hairline);
+    border-radius:2px;
+    margin-top:10px;
+    overflow:hidden;
+    display:none;
+  }
+  .progress-track.on{display:block;}
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--signal);
+    transition:width .3s ease;
+  }
+
+  /* ---------- Submit a missed story ---------- */
+  .submit-block{
+    margin-top:22px;
+    padding-top:16px;
+    border-top:1px solid var(--hairline);
+  }
+  .submit-toggle{
+    background:none;
+    border:none;
+    padding:0;
+    font-family:var(--font);
+    font-size:11.5px;
+    color:var(--text-low);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .submit-toggle:hover{color:var(--text-hi);}
+  .submit-toggle .chev{transition:transform .15s ease;display:inline-block;}
+  .submit-block.open .submit-toggle .chev{transform:rotate(90deg);}
+  .submit-form{display:none;margin-top:12px;flex-direction:column;gap:8px;}
+  .submit-block.open .submit-form{display:flex;}
+  .submit-input,.submit-select{
+    width:100%;
+    font-family:var(--font);
+    font-size:12.5px;
+    color:var(--text-hi);
+    background:var(--surface-raised);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:8px 10px;
+  }
+  .submit-input:focus,.submit-select:focus{outline:2px solid var(--signal);outline-offset:1px;}
+  .submit-input::placeholder{color:var(--text-low);}
+  .submit-go{
+    padding:8px 10px;
+    background:var(--signal);
+    border:1px solid var(--signal);
+    color:#fff;
+    font-family:var(--font);
+    font-size:12.5px;
+    font-weight:600;
+    border-radius:var(--radius);
+    cursor:pointer;
+  }
+  .submit-go:hover{opacity:.88;}
+  .submit-go:disabled{opacity:.5;cursor:default;}
+  .submit-status{font-size:11px;color:var(--text-low);line-height:1.45;}
+  .submit-status.err{color:var(--amber);}
+
+  /* ---------- Main ---------- */
+  .main{
+    flex:1;
+    min-width:0;
+    padding:36px 44px 80px;
+    max-width:840px;
+  }
+  .main-header{
+    margin-bottom:28px;
+  }
+  .main-title{
+    font-family:var(--font-serif);
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin:0 0 6px;
+  }
+  .main-title .accent{color:var(--signal);}
+  .main-meta{
+    font-size:12.5px;
+    color:var(--text-low);
+  }
+
+  .toolbar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:18px 0 10px;
+    flex-wrap:wrap;
+  }
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12.5px;
+    color:var(--text-mid);
+    cursor:pointer;
+    user-select:none;
+  }
+  .toggle input{accent-color:var(--signal);}
+
+  .tag-filter{
+    font-size:12.5px;
+    color:var(--text-mid);
+    background:var(--surface-raised);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:6px 10px;
+    cursor:pointer;
+    font-family:var(--font);
+  }
+
+  .story{
+    padding:22px 0;
+    border-bottom:1px solid var(--hairline);
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  .story:first-child{padding-top:6px;}
+  .story.dismissed{opacity:.42;}
+  .story.dismissed .story-headline{text-decoration:line-through;text-decoration-thickness:1px;}
+  .story-top{
+    display:flex;
+    align-items:flex-start;
+    gap:13px;
+  }
+  .unread-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--amber);
+    margin-top:8px;
+    flex-shrink:0;
+  }
+  .unread-dot.read{background:transparent;}
+  .story-body{flex:1;min-width:0;}
+  .story-meta{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:11.5px;
+    color:var(--text-low);
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  .tag{
+    color:var(--signal);
+    font-weight:600;
+    background:var(--signal-soft);
+    padding:2px 8px;
+    border-radius:3px;
+  }
+  .blog-badge{
+    color:var(--amber);
+    font-style:italic;
+  }
+  .manual-badge{
+    color:var(--signal);
+    font-style:italic;
+  }
+  .story-source{
+    color:var(--text-low);
+  }
+  .story-age{
+    color:var(--text-low);
+    margin-left:auto;
+  }
+  .story-headline{
+    font-family:var(--font-serif);
+    font-size:17px;
+    font-weight:700;
+    line-height:1.35;
+    margin:0 0 5px;
+    color:var(--text-hi);
+  }
+  .story.read .story-headline{color:var(--text-mid);font-weight:600;}
+  .story-teaser{
+    font-size:14px;
+    color:var(--text-mid);
+    line-height:1.55;
+    margin:0;
+  }
+  .story-summary{
+    display:none;
+    font-size:14px;
+    color:var(--text-mid);
+    line-height:1.65;
+    margin:14px 0 0;
+    padding:16px 18px;
+    background:var(--surface);
+    border-left:2px solid var(--signal);
+    border-radius:0 var(--radius) var(--radius) 0;
+  }
+  .story.expanded .story-summary{display:block;}
+  .summary-text{margin:0;}
+  .summary-text.loading{color:var(--text-low);font-style:italic;}
+  .story-actions{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  .story-link{
+    font-size:12.5px;
+    color:var(--signal);
+    font-weight:600;
+    text-decoration:none;
+    border-bottom:1px solid var(--signal-soft);
+  }
+  .story-link:hover{border-bottom-color:var(--signal);color:var(--signal);}
+  .dismiss-btn{
+    background:none;
+    border:none;
+    padding:0;
+    font-family:var(--font);
+    font-size:12px;
+    color:var(--text-low);
+    cursor:pointer;
+    border-bottom:1px solid transparent;
+  }
+  .dismiss-btn:hover{color:var(--amber);border-bottom-color:var(--amber);}
+
+  .empty-state{
+    padding:70px 0;
+    text-align:center;
+    color:var(--text-low);
+  }
+  .empty-state .glyph{
+    font-family:var(--font-serif);
+    font-size:28px;
+    font-style:italic;
+    color:var(--hairline);
+    margin:0 auto 14px;
+  }
+  .empty-state p{font-size:13.5px;margin:0;}
+
+  .day-divider{
+    font-family:var(--font-serif);
+    font-style:italic;
+    font-size:13px;
+    color:var(--text-low);
+    margin:34px 0 6px;
+    border-top:1px solid var(--hairline);
+    padding-top:14px;
+  }
+  .day-divider:first-child{margin-top:0;border-top:none;padding-top:0;}
+
+  @media (max-width: 760px){
+    .app{flex-direction:column;}
+    .rail{
+      width:100%;
+      height:auto;
+      position:relative;
+      padding:18px 16px;
+      display:flex;
+      flex-direction:column;
+    }
+    .bucket-list{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px;}
+    .bucket-item{white-space:nowrap;margin-bottom:0;}
+    .rail-footer{margin-top:14px;padding-top:14px;}
+    .main{padding:24px 18px 60px;max-width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="rail">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">My News</span>
+    </div>
+
+    <div class="rail-section-label">Beats</div>
+    <ul class="bucket-list" id="bucket-list"></ul>
+
+    <div class="rail-footer">
+      <button class="refresh-btn" id="refresh-btn">
+        <span class="spin"></span>
+        <span id="refresh-label">Refresh now</span>
+      </button>
+      <div class="progress-track" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="last-refresh" id="last-refresh">—</div>
+    </div>
+
+    <div class="submit-block" id="submit-block">
+      <button class="submit-toggle" id="submit-toggle">
+        <span class="chev">›</span> Add a story it missed
+      </button>
+      <div class="submit-form">
+        <input class="submit-input" id="submit-url" type="url" placeholder="Paste article URL">
+        <select class="submit-select" id="submit-bucket"></select>
+        <input class="submit-input" id="submit-note" type="text" placeholder="Note (optional)">
+        <button class="submit-go" id="submit-go">Add &amp; learn</button>
+        <div class="submit-status" id="submit-status"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="main-header">
+      <h1 class="main-title" id="main-title">Everything</h1>
+      <div class="main-meta" id="main-meta">Loading…</div>
+    </div>
+
+    <div class="toolbar">
+      <label class="toggle">
+        <input type="checkbox" id="hide-read">
+        Hide read
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="hide-dismissed">
+        Hide dismissed
+      </label>
+      <select class="tag-filter" id="tag-filter">
+        <option value="all">All tags</option>
+        <option value="Product Launch">Product Launch</option>
+        <option value="Earnings">Earnings</option>
+        <option value="Partnership">Partnership</option>
+        <option value="AI Fabric">AI Fabric</option>
+        <option value="Executive Move">Executive Move</option>
+        <option value="Industry Standard">Industry Standard</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div id="feed"></div>
+  </main>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ---- PASTE YOUR REAL VALUES HERE ----
+const SUPABASE_URL = "https://lbkvvpikphwzquuavwzf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxia3Z2cGlrcGh3enF1dWF2d3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjIzNTIsImV4cCI6MjEwMzg5ODM1Mn0.yP-WPFUVAXJGaOxqRw6gDmrEjoo2eW4X78E7tvTvDuY";
+const REFRESH_SECRET = "Letmein";
+// --------------------------------------
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const BUCKETS = [
+  { id: "all", label: "All News" },
+  { id: "hpe", label: "HPE Networking (Juniper + Aruba)" },
+  { id: "cisco", label: "Cisco" },
+  { id: "arista", label: "Arista" },
+  { id: "silicon", label: "Silicon & Industry Trends" },
+  { id: "ai_industry", label: "AI Industry & Broader Trends" },
+  { id: "space", label: "Space Data Centers" },
+  { id: "standards", label: "Networking Standards & Innovations" },
+];
+
+const STALE_HOURS = 20;
+const LAST_REFRESH_KEY = "backbone:lastRefreshAt";
+
+let stories = [];
+let activeBucket = "all";
+let hideRead = false;
+let hideDismissed = false;
+let activeTag = "all";
+let refreshing = false;
+
+const bucketListEl = document.getElementById("bucket-list");
+const feedEl = document.getElementById("feed");
+const mainTitleEl = document.getElementById("main-title");
+const mainMetaEl = document.getElementById("main-meta");
+const refreshBtn = document.getElementById("refresh-btn");
+const refreshLabel = document.getElementById("refresh-label");
+const lastRefreshEl = document.getElementById("last-refresh");
+const progressTrack = document.getElementById("progress-track");
+const progressFill = document.getElementById("progress-fill");
+const hideReadToggle = document.getElementById("hide-read");
+const hideDismissedToggle = document.getElementById("hide-dismissed");
+const tagFilterEl = document.getElementById("tag-filter");
+const submitBlock = document.getElementById("submit-block");
+const submitToggle = document.getElementById("submit-toggle");
+const submitUrl = document.getElementById("submit-url");
+const submitBucket = document.getElementById("submit-bucket");
+const submitNote = document.getElementById("submit-note");
+const submitGo = document.getElementById("submit-go");
+const submitStatus = document.getElementById("submit-status");
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function apiHeaders() {
+  const h = { "Content-Type": "application/json" };
+  if (REFRESH_SECRET) h["x-refresh-secret"] = REFRESH_SECRET;
+  return h;
+}
+
+function unreadCountFor(bucketId) {
+  return stories.filter(s =>
+    (bucketId === "all" || s.bucket === bucketId) && !s.is_read && !s.dismissed).length;
+}
+
+function renderRail() {
+  bucketListEl.innerHTML = "";
+  BUCKETS.forEach(b => {
+    const li = document.createElement("li");
+    li.className = "bucket-item" + (b.id === activeBucket ? " active" : "");
+    const unread = unreadCountFor(b.id);
+    li.innerHTML = `
+      <span class="bucket-label">
+        ${unread > 0 ? '<span class="bucket-unread"></span>' : ""}
+        <span>${esc(b.label)}</span>
+      </span>
+      <span class="bucket-count">${unread > 0 ? unread : ""}</span>
+    `;
+    li.addEventListener("click", () => {
+      activeBucket = b.id;
+      renderRail();
+      renderFeed();
+    });
+    bucketListEl.appendChild(li);
+  });
+}
+
+function groupByDay(list) {
+  const groups = {};
+  list.forEach(s => {
+    const day = s.found_on;
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(s);
+  });
+  return Object.entries(groups).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+}
+
+function relativeAge(dateStr) {
+  if (!dateStr) return "Date unknown";
+  const d = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.round((today - d) / 86400000);
+  if (diffDays < 0) return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) { const w = Math.round(diffDays / 7); return `${w} week${w > 1 ? "s" : ""} ago`; }
+  if (diffDays < 365) { const m = Math.round(diffDays / 30); return `${m} month${m > 1 ? "s" : ""} ago`; }
+  const y = Math.round(diffDays / 365);
+  return `${y} year${y > 1 ? "s" : ""} ago`;
+}
+
+function formatDay(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.round((today - d) / 86400000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function renderFeed() {
+  const bucket = BUCKETS.find(b => b.id === activeBucket);
+  mainTitleEl.textContent = bucket.label;
+
+  let list = stories.filter(s => activeBucket === "all" || s.bucket === activeBucket);
+  if (hideRead) list = list.filter(s => !s.is_read);
+  if (hideDismissed) list = list.filter(s => !s.dismissed);
+  if (activeTag !== "all") list = list.filter(s => s.tag === activeTag);
+
+  mainMetaEl.textContent = `${list.length} ${list.length === 1 ? "story" : "stories"}`;
+
+  feedEl.innerHTML = "";
+
+  if (list.length === 0) {
+    feedEl.innerHTML = `
+      <div class="empty-state">
+        <div class="glyph">§</div>
+        <p>Nothing here yet. Hit "Refresh now" to check for the latest.</p>
+      </div>`;
+    return;
+  }
+
+  groupByDay(list).forEach(([day, dayStories]) => {
+    const divider = document.createElement("div");
+    divider.className = "day-divider";
+    divider.textContent = formatDay(day);
+    feedEl.appendChild(divider);
+
+    dayStories.forEach(story => {
+      const el = document.createElement("article");
+      el.className = "story"
+        + (story.is_read ? " read" : "")
+        + (story.dismissed ? " dismissed" : "");
+      el.innerHTML = `
+        <div class="story-top">
+          <span class="unread-dot ${story.is_read ? "read" : ""}"></span>
+          <div class="story-body">
+            <div class="story-meta">
+              <span class="tag">${esc(story.tag)}</span>
+              ${story.is_blog ? '<span class="blog-badge">Blog post</span>' : ""}
+              ${story.is_manual ? '<span class="manual-badge">Added by you</span>' : ""}
+              <span class="story-source">${esc(story.source)}</span>
+              <span class="story-age">${relativeAge(story.published_at)}</span>
+            </div>
+            <p class="story-headline">${esc(story.headline)}</p>
+            <p class="story-teaser">${esc(story.teaser)}</p>
+            <div class="story-summary">
+              <p class="summary-text${story.summary ? "" : " loading"}">${
+                story.summary ? esc(story.summary) : "Writing summary…"
+              }</p>
+              <div class="story-actions">
+                <a class="story-link" href="${esc(story.url)}" target="_blank" rel="noopener">Read source</a>
+                <button class="dismiss-btn">${story.dismissed ? "Undo not relevant" : "Not relevant"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      el.querySelector(".dismiss-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDismissed(story);
+      });
+
+      el.addEventListener("click", (e) => {
+        if (e.target.tagName === "A" || e.target.tagName === "BUTTON") return;
+        const nowOpen = el.classList.toggle("expanded");
+        if (nowOpen && !story.summary) ensureSummary(story, el);
+        if (!story.is_read) markRead(story);
+      });
+
+      feedEl.appendChild(el);
+    });
+  });
+}
+
+// Long summary is generated on first expand, then cached in the row.
+async function ensureSummary(story, el) {
+  const target = el.querySelector(".summary-text");
+  try {
+    const res = await fetch("/api/summarize", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({ story_id: story.id }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Summary failed");
+    story.summary = result.summary;
+    target.textContent = result.summary;
+    target.classList.remove("loading");
+  } catch (err) {
+    console.error(err);
+    target.textContent = "Couldn't write a summary. Open the source instead.";
+    target.classList.remove("loading");
+  }
+}
+
+async function markRead(story) {
+  story.is_read = true;
+  renderRail();
+  const { error } = await supabase.rpc("mark_story_read", { story_id: story.id });
+  if (error) console.error("Failed to mark read:", error);
+}
+
+async function toggleDismissed(story) {
+  const next = !story.dismissed;
+  story.dismissed = next;
+  renderRail();
+  renderFeed();
+  try {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({ story_id: story.id, dismissed: next }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Feedback failed");
+  } catch (err) {
+    console.error(err);
+    story.dismissed = !next;   // roll back the optimistic update
+    renderFeed();
+  }
+}
+
+async function loadStories() {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .order("found_on", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    mainMetaEl.textContent = "Couldn't load stories — check your Supabase keys.";
+    console.error(error);
+    return;
+  }
+  stories = data || [];
+  renderRail();
+  renderFeed();
+
+  const stamp = localStorage.getItem(LAST_REFRESH_KEY);
+  if (stamp) {
+    lastRefreshEl.textContent = `Last checked ${new Date(Number(stamp)).toLocaleString(undefined, {
+      month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    })}`;
+  } else if (stories.length) {
+    const latest = stories.reduce((a, b) => (a.found_on > b.found_on ? a : b));
+    lastRefreshEl.textContent = `Last found: ${formatDay(latest.found_on)}`;
+  }
+}
+
+// Refresh runs in chunks of beats so each call stays inside Hobby's 60s limit
+// and under the free-tier token-per-minute ceiling.
+async function triggerRefresh() {
+  if (refreshing) return;
+  refreshing = true;
+  refreshBtn.disabled = true;
+  refreshBtn.classList.add("loading");
+  progressTrack.classList.add("on");
+  progressFill.style.width = "0%";
+
+  let cursor = 0;
+  let inserted = 0;
+  let total = BUCKETS.length - 1;
+  const problems = [];
+
+  try {
+    while (cursor !== null) {
+      refreshLabel.textContent = `Checking ${Math.min(cursor + 1, total)}–${Math.min(cursor + 3, total)} of ${total}…`;
+      const res = await fetch(`/api/refresh?cursor=${cursor}`, {
+        method: "POST",
+        headers: apiHeaders(),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.ok) throw new Error(result.error || "Refresh failed");
+
+      inserted += result.stories_inserted || 0;
+      if (result.total_buckets) total = result.total_buckets;
+      if (result.feed_health?.length) problems.push(...result.feed_health);
+
+      const donePct = result.done ? 100 : Math.round(((result.next || 0) / total) * 100);
+      progressFill.style.width = `${donePct}%`;
+      cursor = result.done ? null : result.next;
+    }
+
+    localStorage.setItem(LAST_REFRESH_KEY, String(Date.now()));
+    await loadStories();
+    refreshLabel.textContent = inserted ? `Found ${inserted} new` : "Nothing new";
+
+    if (problems.length) {
+      console.warn("Feeds returning nothing or failing:", problems);
+      lastRefreshEl.textContent += ` · ${problems.length} feed${problems.length > 1 ? "s" : ""} need attention (see console)`;
+    }
+  } catch (err) {
+    console.error(err);
+    refreshLabel.textContent = "Refresh failed";
+    lastRefreshEl.textContent = String(err.message || err).slice(0, 120);
+  } finally {
+    refreshing = false;
+    refreshBtn.classList.remove("loading");
+    refreshBtn.disabled = false;
+    setTimeout(() => {
+      refreshLabel.textContent = "Refresh now";
+      progressTrack.classList.remove("on");
+    }, 3500);
+  }
+}
+
+async function submitStory() {
+  const url = submitUrl.value.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    submitStatus.textContent = "Needs a full http(s) URL.";
+    submitStatus.classList.add("err");
+    return;
+  }
+  submitGo.disabled = true;
+  submitStatus.classList.remove("err");
+  submitStatus.textContent = "Reading the page…";
+
+  try {
+    const res = await fetch("/api/submit", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        url,
+        bucket: submitBucket.value,
+        note: submitNote.value.trim(),
+      }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Submit failed");
+
+    submitStatus.textContent = result.already_present
+      ? "Already in your feed — recorded as a preference."
+      : `Added.${result.warning ? " " + result.warning + "." : ""} This source is now trusted.`;
+    submitUrl.value = "";
+    submitNote.value = "";
+    await loadStories();
+  } catch (err) {
+    console.error(err);
+    submitStatus.textContent = String(err.message || err).slice(0, 140);
+    submitStatus.classList.add("err");
+  } finally {
+    submitGo.disabled = false;
+  }
+}
+
+// --- wiring ----------------------------------------------------------------
+BUCKETS.filter(b => b.id !== "all").forEach(b => {
+  const opt = document.createElement("option");
+  opt.value = b.id;
+  opt.textContent = b.label;
+  submitBucket.appendChild(opt);
+});
+
+refreshBtn.addEventListener("click", triggerRefresh);
+submitGo.addEventListener("click", submitStory);
+submitUrl.addEventListener("keydown", (e) => { if (e.key === "Enter") submitStory(); });
+submitToggle.addEventListener("click", () => submitBlock.classList.toggle("open"));
+
+hideReadToggle.addEventListener("change", (e) => {
+  hideRead = e.target.checked;
+  renderFeed();
+});
+hideDismissedToggle.addEventListener("change", (e) => {
+  hideDismissed = e.target.checked;
+  renderFeed();
+});
+tagFilterEl.addEventListener("change", (e) => {
+  activeTag = e.target.value;
+  renderFeed();
+});
+
+await loadStories();
+
+// Hobby crons only fire once a day and can't finish the whole loop, so the
+// page keeps itself current: if it's been a while, refresh on load.
+const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
+if (Date.now() - last > STALE_HOURS * 3600 * 1000) {
+  triggerRefresh();
+}
+</script>
+</body>
+</html>
