@@ -122,9 +122,9 @@ Return ONLY a JSON object (no fences, no preamble):
         description: meta.description,
         source,
         user_note: note,
-      }, 400);
-      labelled = parseJsonish(raw.replace(/^\s*\[|\]\s*$/g, "")) || JSON.parse(raw);
-      if (Array.isArray(labelled)) labelled = labelled[0] || {};
+      }, 400, { json: true });
+      const parsed = parseJsonish(raw);
+      labelled = Array.isArray(parsed) ? (parsed[0] || {}) : (parsed || {});
     } catch (err) {
       console.error("submit labelling failed, storing raw:", err.message);
     }

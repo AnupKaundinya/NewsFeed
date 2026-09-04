@@ -153,18 +153,21 @@ many publishers filed the same story; broad coverage is evidence of significance
 ${ex.liked.length ? `\nStories this user explicitly flagged as worth surfacing:\n${ex.liked.map((h) => `- ${h}`).join("\n")}` : ""}
 ${ex.disliked.length ? `\nStories this user marked NOT relevant — avoid this kind:\n${ex.disliked.map((h) => `- ${h}`).join("\n")}` : ""}
 
-Return ONLY a JSON array (no fences, no preamble), one object per SELECTED item:
-{
+Return ONLY a JSON object with a single key "selected", whose value is an array of the chosen items:
+{ "selected": [ {
   "i": <the item's index>,
   "headline": "plain factual rewrite; strip clickbait and any ' - Publisher' suffix",
   "teaser": "1-2 sentence summary — or null if teaser_supplied is true",
   "tag": one of ${TAGS.map((t) => `"${t}"`).join(", ")}
-}
-Return [] if nothing in the list is worth the user's attention.`;
+} ] }
+Use { "selected": [] } if nothing in the list is worth the user's attention.`;
 
-  const raw = await llm(system, payload, 800);
-  const rows = parseJsonish(raw);
-  if (!Array.isArray(rows)) throw new Error(`model returned unparseable JSON for ${bucket.id}`);
+  const raw = await llm(system, payload, 1200, { json: true });
+  const rows = parseJsonish(raw, "selected");
+  if (!Array.isArray(rows)) {
+    console.error(`Unparseable model output for ${bucket.id}:`, String(raw).slice(0, 500));
+    return [];   // skip this beat rather than failing the whole run
+  }
 
   const out = [];
   const used = new Set();
@@ -225,7 +228,6 @@ export default async function handler(req, res) {
     for (const bucket of slice) {
       const { candidates, health } = await gather(bucket, windowDays, learning);
       feedHealth.push({ bucket: bucket.id, feeds: health });
-
       // Drop anything already stored BEFORE spending tokens on it.
       const keys = candidates.map((c) => dedupeKey(bucket.id, c.url));
       let known = new Set();

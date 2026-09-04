@@ -29,10 +29,10 @@ function waitFromRateLimit(res, body) {
   return 6000;
 }
 
-export async function llm(system, user, maxTokens = 900) {
+export async function llm(system, user, maxTokens = 900, opts = {}) {
   if (!process.env.LLM_API_KEY) throw new Error("LLM_API_KEY is not set");
 
-  const body = JSON.stringify({
+  const payload = {
     model: LLM_MODEL,
     temperature: 0.2,
     max_tokens: maxTokens,
@@ -40,7 +40,14 @@ export async function llm(system, user, maxTokens = 900) {
       { role: "system", content: system },
       { role: "user", content: typeof user === "string" ? user : JSON.stringify(user) },
     ],
-  });
+  };
+
+  // GPT-OSS models emit reasoning before the answer; keep it minimal and, when
+  // we need structured output, force real JSON mode rather than hoping.
+  if (opts.json) payload.response_format = { type: "json_object" };
+  if (/gpt-oss/i.test(LLM_MODEL)) payload.reasoning_effort = opts.reasoningEffort || "low";
+
+  const body = JSON.stringify(payload);
 
   let lastErr = "";
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -77,19 +84,33 @@ export async function llm(system, user, maxTokens = 900) {
   throw new Error(lastErr || "LLM failed");
 }
 
-export function parseJsonish(raw) {
-  const cleaned = raw.replace(/```json|```/g, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    // Models occasionally wrap the array in prose. Grab the outermost array.
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-    if (start !== -1 && end > start) {
-      try { return JSON.parse(cleaned.slice(start, end + 1)); } catch {}
+// Models wrap JSON in prose, fences, or reasoning preamble. Dig the structure out.
+export function parseJsonish(raw, arrayKeyHint) {
+  const cleaned = String(raw || "").replace(/```json|```/g, "").trim();
+
+  const unwrap = (v) => {
+    if (Array.isArray(v)) return v;
+    if (v && typeof v === "object") {
+      if (arrayKeyHint && Array.isArray(v[arrayKeyHint])) return v[arrayKeyHint];
+      const arr = Object.values(v).find((x) => Array.isArray(x));
+      if (arr) return arr;
     }
-    return null;
+    return v;
+  };
+
+  try {
+    return unwrap(JSON.parse(cleaned));
+  } catch {}
+
+  // Outermost object, then outermost array.
+  for (const [open, close] of [["{", "}"], ["[", "]"]]) {
+    const start = cleaned.indexOf(open);
+    const end = cleaned.lastIndexOf(close);
+    if (start !== -1 && end > start) {
+      try { return unwrap(JSON.parse(cleaned.slice(start, end + 1))); } catch {}
+    }
   }
+  return null;
 }
 
 // --- Dates / ids -----------------------------------------------------------
