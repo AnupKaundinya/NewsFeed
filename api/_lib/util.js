@@ -11,36 +11,70 @@ export const supabase = createClient(
 // Any OpenAI-compatible provider. Defaults to Groq's free tier.
 // To switch: set LLM_BASE_URL + LLM_MODEL in Vercel. No code change.
 const LLM_BASE = process.env.LLM_BASE_URL || "https://api.groq.com/openai/v1";
-const LLM_MODEL = process.env.LLM_MODEL || "llama-3.3-70b-versatile";
+const LLM_MODEL = process.env.LLM_MODEL || "openai/gpt-oss-20b";
 
-export async function llm(system, user, maxTokens = 1600) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// How long to wait after a 429. Groq sends retry-after, and also states the
+// wait inside the error message ("Please try again in 8.43s").
+function waitFromRateLimit(res, body) {
+  const header = parseFloat(res.headers.get("retry-after") || "");
+  if (Number.isFinite(header) && header > 0) return Math.min(header * 1000, 20000);
+  const m = /try again in ([\d.]+)\s*(ms|s|m)/i.exec(body || "");
+  if (m) {
+    const n = parseFloat(m[1]);
+    const ms = m[2].toLowerCase() === "ms" ? n : m[2].toLowerCase() === "m" ? n * 60000 : n * 1000;
+    return Math.min(ms + 500, 20000);
+  }
+  return 6000;
+}
+
+export async function llm(system, user, maxTokens = 900) {
   if (!process.env.LLM_API_KEY) throw new Error("LLM_API_KEY is not set");
 
-  const res = await fetch(`${LLM_BASE}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${process.env.LLM_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      temperature: 0.2,
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: typeof user === "string" ? user : JSON.stringify(user) },
-      ],
-    }),
-    signal: AbortSignal.timeout(25000),
+  const body = JSON.stringify({
+    model: LLM_MODEL,
+    temperature: 0.2,
+    max_tokens: maxTokens,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: typeof user === "string" ? user : JSON.stringify(user) },
+    ],
   });
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`LLM ${res.status}: ${body.slice(0, 300)}`);
+  let lastErr = "";
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(`${LLM_BASE}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${process.env.LLM_API_KEY}`,
+      },
+      body,
+      signal: AbortSignal.timeout(25000),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return (json.choices?.[0]?.message?.content || "").trim();
+    }
+
+    const text = await res.text().catch(() => "");
+    lastErr = `LLM ${res.status}: ${text.slice(0, 300)}`;
+
+    // Per-day quota can't be waited out inside a request — fail immediately.
+    if (res.status === 429 && /per day|requests? per day|tokens? per day|RPD|TPD/i.test(text)) {
+      throw new Error(`${lastErr} — daily quota exhausted, try again after it resets`);
+    }
+    if (res.status === 429 || res.status >= 500) {
+      if (attempt === 3) break;
+      await sleep(waitFromRateLimit(res, text));
+      continue;
+    }
+    throw new Error(lastErr);   // 401, 404, 400 — retrying won't help
   }
 
-  const json = await res.json();
-  return (json.choices?.[0]?.message?.content || "").trim();
+  throw new Error(lastErr || "LLM failed");
 }
 
 export function parseJsonish(raw) {
