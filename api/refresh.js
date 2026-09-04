@@ -4,9 +4,9 @@ import {
   pacificToday, significantTerms, titleOverlap,
 } from "./_lib/util.js";
 
-const CHUNK = 3;              // buckets per invocation — keeps us under Hobby's 60s
+const CHUNK = 1;              // one beat per invocation — spreads calls out under the free-tier ceiling
 const PER_BUCKET = 4;         // stories kept per beat per run
-const SHORTLIST = 8;          // candidates that reach the model
+const SHORTLIST = 6;          // candidates that reach the model
 const DAILY_WINDOW = 5;       // days back for a normal refresh
 const BACKFILL_WINDOW = 21;   // RSS rarely holds more than ~2-3 weeks
 
@@ -137,7 +137,7 @@ async function selectAndLabel(bucket, shortlist, learning, keep) {
     title: c.title,
     source: c.source,
     outlets_covering: c.corroboration + 1,
-    snippet: c.body.slice(0, 320),
+    snippet: c.body.slice(0, 200),
     teaser_supplied: !!usableTeaser(c.body),
   }));
 
@@ -162,7 +162,7 @@ Return ONLY a JSON array (no fences, no preamble), one object per SELECTED item:
 }
 Return [] if nothing in the list is worth the user's attention.`;
 
-  const raw = await llm(system, payload, 1200);
+  const raw = await llm(system, payload, 800);
   const rows = parseJsonish(raw);
   if (!Array.isArray(rows)) throw new Error(`model returned unparseable JSON for ${bucket.id}`);
 
