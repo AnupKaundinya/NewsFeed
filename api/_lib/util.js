@@ -185,7 +185,14 @@ export function titleOverlap(a, b) {
 }
 
 // --- Feeds -----------------------------------------------------------------
-const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
+// processEntities:false — several real feeds (AWS, Google Cloud) declare enough
+// XML entities to trip fast-xml-parser's expansion guard. We don't need entity
+// decoding here: stripHtml() handles the common ones.
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+  processEntities: false,
+});
 
 function asArray(v) {
   return v == null ? [] : Array.isArray(v) ? v : [v];

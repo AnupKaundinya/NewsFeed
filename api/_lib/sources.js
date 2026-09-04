@@ -19,33 +19,30 @@ export function gnews(query) {
 
 // --- Trade press -----------------------------------------------------------
 const DCD = { url: "https://www.datacenterdynamics.com/en/rss/", tier: 1, kind: "press" };
-const FIERCE = { url: "https://www.fierce-network.com/rss/xml", tier: 1, kind: "press" };
+const FIERCE = { url: "https://www.fierce-network.com/rss.xml", tier: 1, kind: "press" };
 const DCK = { url: "https://www.datacenterknowledge.com/rss.xml", tier: 1, kind: "press" };
 const NETWORLD = { url: "https://www.networkworld.com/feed/", tier: 1, kind: "press" };
 
-const REGISTER = { url: "https://www.theregister.com/data_centre/headlines.atom", tier: 2, kind: "press" };
+const REGISTER = { url: "https://www.theregister.com/headlines.atom", tier: 2, kind: "press" };
 const SDX = { url: "https://www.sdxcentral.com/feed/", tier: 2, kind: "press" };
 const LIGHTREADING = { url: "https://www.lightreading.com/rss.xml", tier: 2, kind: "press" };
 const NEXTPLATFORM = { url: "https://www.nextplatform.com/feed/", tier: 2, kind: "press" };
 const BLOCKSFILES = { url: "https://blocksandfiles.com/feed/", tier: 2, kind: "press" };
+const STH = { url: "https://www.servethehome.com/feed/", tier: 2, kind: "press" };
 
-// --- Vendor blogs and newsrooms -------------------------------------------
+// --- Vendor blogs ----------------------------------------------------------
+// Removed: HPE community, Cisco newsroom, Broadcom (404); Juniper, Marvell (403,
+// bot-blocked at the edge — no URL will work). Vendor news still reaches these
+// beats through the per-beat Google News query, which indexes their newsrooms.
 const CISCO_BLOG = { url: "https://blogs.cisco.com/feed", tier: 1, kind: "press" };
-const CISCO_NEWS = { url: "https://newsroom.cisco.com/c/services/i/rss/all.xml", tier: 1, kind: "press" };
 const ARISTA = { url: "https://blogs.arista.com/blog/rss.xml", tier: 1, kind: "press" };
-const HPE = { url: "https://community.hpe.com/t5/s/gxcf89792/rss/Community?interaction.style=blog", tier: 1, kind: "press" };
-const JUNIPER = { url: "https://blogs.juniper.net/feed", tier: 1, kind: "press" };
 const NVIDIA = { url: "https://blogs.nvidia.com/feed/", tier: 1, kind: "press" };
-const AMD = { url: "https://community.amd.com/t5/s/gxcf89792/rss/Community", tier: 1, kind: "press" };
-const BROADCOM = { url: "https://www.broadcom.com/blog/rss.xml", tier: 1, kind: "press" };
-const MARVELL = { url: "https://www.marvell.com/blogs/feed/", tier: 1, kind: "press" };
 
 // --- Hyperscaler / FAANG engineering blogs --------------------------------
 const META_ENG = { url: "https://engineering.fb.com/feed/", tier: 1, kind: "press" };
 const AWS_NET = { url: "https://aws.amazon.com/blogs/networking-and-content-delivery/feed/", tier: 1, kind: "press" };
 const GCP = { url: "https://cloudblog.withgoogle.com/rss/", tier: 1, kind: "press" };
 const AZURE = { url: "https://azure.microsoft.com/en-us/blog/feed/", tier: 1, kind: "press" };
-const LINKEDIN_ENG = { url: "https://www.linkedin.com/blog/engineering/rss", tier: 1, kind: "press" };
 const CLOUDFLARE = { url: "https://blog.cloudflare.com/rss/", tier: 1, kind: "press" };
 const NETFLIX_ENG = { url: "https://netflixtechblog.com/feed", tier: 1, kind: "blog" };
 
@@ -81,14 +78,14 @@ export const BUCKETS = [
     label: "HPE Networking (Juniper + Aruba)",
     keywords: ["hpe", "hewlett packard", "juniper", "aruba", "mist ai", "apstra"],
     query: "HPE Networking OR Juniper Networks OR Aruba data center switching",
-    feeds: [DCD, FIERCE, DCK, NETWORLD, HPE, JUNIPER, REGISTER, LIGHTREADING],
+    feeds: [DCD, FIERCE, DCK, NETWORLD, REGISTER, LIGHTREADING, SDX],
   },
   {
     id: "cisco",
     label: "Cisco",
     keywords: ["cisco", "nexus", "silicon one", "hypershield", "aci", "catalyst"],
     query: "Cisco data center networking switching",
-    feeds: [DCD, FIERCE, DCK, NETWORLD, CISCO_BLOG, CISCO_NEWS, REGISTER, LIGHTREADING],
+    feeds: [DCD, FIERCE, DCK, NETWORLD, CISCO_BLOG, REGISTER, LIGHTREADING],
   },
   {
     id: "arista",
@@ -106,7 +103,7 @@ export const BUCKETS = [
       "800g", "1.6t", "amd", "pensando",
     ],
     query: "Broadcom Tomahawk OR Nvidia Spectrum OR networking silicon OR co-packaged optics",
-    feeds: [NVIDIA, BROADCOM, MARVELL, AMD, DCD, NEXTPLATFORM, REGISTER, DCK],
+    feeds: [NVIDIA, STH, DCD, NEXTPLATFORM, REGISTER, DCK, BLOCKSFILES],
   },
   {
     id: "ai_industry",
@@ -134,7 +131,7 @@ export const BUCKETS = [
       "load balanc", "topology",
     ],
     query: "RDMA OR RoCE OR Ultra Ethernet Consortium OR InfiniBand OR NVLink standards",
-    feeds: [META_ENG, AWS_NET, LINKEDIN_ENG, NETFLIX_ENG, OCP, ETHERNET_ALLIANCE, DCD, NETWORLD, NEXTPLATFORM],
+    feeds: [META_ENG, AWS_NET, NETFLIX_ENG, OCP, ETHERNET_ALLIANCE, DCD, NETWORLD, NEXTPLATFORM, STH],
   },
 ];
 
