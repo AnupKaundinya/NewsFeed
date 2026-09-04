@@ -577,7 +577,7 @@ function renderRail() {
 function groupByDay(list) {
   const groups = {};
   list.forEach(s => {
-    const day = s.found_on;
+    const day = s.published_at || s.found_on;
     if (!groups[day]) groups[day] = [];
     groups[day].push(s);
   });
@@ -738,7 +738,7 @@ async function loadStories() {
   const { data, error } = await supabase
     .from("stories")
     .select("*")
-    .order("found_on", { ascending: false })
+    .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -756,8 +756,9 @@ async function loadStories() {
       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
     })}`;
   } else if (stories.length) {
-    const latest = stories.reduce((a, b) => (a.found_on > b.found_on ? a : b));
-    lastRefreshEl.textContent = `Last found: ${formatDay(latest.found_on)}`;
+    const latest = stories.reduce((a, b) =>
+      ((a.published_at || a.found_on) > (b.published_at || b.found_on) ? a : b));
+    lastRefreshEl.textContent = `Latest story: ${formatDay(latest.published_at || latest.found_on)}`;
   }
 }
 
