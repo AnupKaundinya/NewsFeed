@@ -96,6 +96,9 @@
   .tab .mark{position:absolute;left:0;right:8px;bottom:0;height:2px;border-radius:2px;background:transparent;transition:background .18s ease;}
   .tab.active .mark{background:var(--color-accent);}
   .tab .count{font-size:12px;color:var(--color-accent-300);vertical-align:super;margin-left:3px;}
+  .tab.tab-saved{flex:none;margin-left:28px;display:flex;align-items:center;gap:7px;}
+  .tab.tab-saved svg{width:15px;height:15px;display:block;}
+  .tab.tab-saved .mark{right:0;}
 
   .rule{height:1px;background:linear-gradient(90deg,transparent 0,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent 100%);}
 
@@ -146,6 +149,18 @@
   .card.open{grid-column:1 / -1;}
   .card.dismissed{opacity:.4;}
   .card.dismissed .card-title{text-decoration:line-through;text-decoration-thickness:1px;}
+  .card.was-read{opacity:.72;}
+  .card.was-read:hover{opacity:1;}
+
+  .save-btn{
+    background:transparent;border:0;padding:0;margin-left:2px;cursor:pointer;flex:none;
+    color:var(--color-neutral-600);display:flex;align-items:center;transition:color .18s ease;
+  }
+  .save-btn svg{width:16px;height:16px;display:block;}
+  .save-btn:hover{color:var(--color-accent-300);}
+  .save-btn:active{color:var(--color-accent-400);}
+  .save-btn.on{color:var(--color-accent);}
+  .save-btn.on:hover{color:var(--color-accent-300);}
 
   .card-meta{display:flex;align-items:center;gap:12px;}
   .dot{width:5px;height:5px;border-radius:5px;background:var(--color-accent);flex:none;}
@@ -194,6 +209,7 @@
     .bar{padding:14px 18px 4px;}
     .tabs{padding:0 18px;overflow-x:auto;}
     .tab{flex:none;font-size:16px;padding:12px 0 14px;margin-right:22px;}
+    .tab.tab-saved{margin-left:12px;}
     .tab .mark{right:0;}
     .feed{padding:24px 18px 90px;}
     .menu{padding:18px;}
@@ -255,7 +271,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ---- PASTE YOUR REAL VALUES HERE ----
 const SUPABASE_URL = "https://lbkvvpikphwzquuavwzf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxia3Z2cGlrcGh3enF1dWF2d3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjIzNTIsImV4cCI6MjEwMzg5ODM1Mn0.yP-WPFUVAXJGaOxqRw6gDmrEjoo2eW4X78E7tvTvDuY";
-const REFRESH_SECRET = "8928eff4ee9582ed787dbe0db1366c4f";
+const REFRESH_SECRET = "Letmein";
 // --------------------------------------
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -311,6 +327,9 @@ const submitGo = document.getElementById("submit-go");
 const submitStatus = document.getElementById("submit-status");
 const pullEl = document.getElementById("pull");
 
+const BOOKMARK_OUTLINE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.56V48H184Z"></path></svg>';
+const BOOKMARK_FILL = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Z"></path></svg>';
+
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -346,6 +365,18 @@ function renderTabs() {
     });
     tabsEl.appendChild(btn);
   });
+
+  // Saved sits at the right end, past a gap: it's a view, not a beat.
+  const saved = document.createElement("button");
+  saved.className = "tab tab-saved" + (activeBucket === "saved" ? " active" : "");
+  saved.innerHTML = `${BOOKMARK_OUTLINE}<span>Saved</span><span class="mark"></span>`;
+  saved.addEventListener("click", () => {
+    activeBucket = "saved";
+    openId = null;
+    renderTabs();
+    renderFeed();
+  });
+  tabsEl.appendChild(saved);
 }
 
 function relativeDay(dateStr) {
@@ -378,6 +409,7 @@ function cardMarkup(s) {
       <span class="dot ${s.is_read ? "read" : ""}"></span>
       <span class="kicker">${esc(s.tag)}</span>
       <span class="when">${relativeDay(dayOf(s))}</span>
+      <button class="save-btn js-save ${s.saved ? "on" : ""}" aria-pressed="${s.saved ? "true" : "false"}" aria-label="${s.saved ? "Remove from saved" : "Save article"}" title="${s.saved ? "Remove from saved" : "Save"}">${s.saved ? BOOKMARK_FILL : BOOKMARK_OUTLINE}</button>
     </div>
     <h3 class="card-title">${esc(s.headline)}</h3>
     <p class="card-teaser">${esc(s.teaser)}</p>
@@ -405,8 +437,13 @@ function buildCard(s) {
     toggleDismissed(s);
   });
 
+  el.querySelector(".js-save").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleSaved(s);
+  });
+
   el.addEventListener("click", (e) => {
-    if (e.target.tagName === "A" || e.target.tagName === "BUTTON") return;
+    if (e.target.closest("a, button")) return;
     const opening = openId !== s.id;
     if (opening) openWasRead = s.is_read;
     openId = opening ? s.id : null;
@@ -420,7 +457,34 @@ function buildCard(s) {
   return el;
 }
 
+// Saved is its own view: no day grouping, no read pile, ordered by when you
+// saved it rather than when it was published.
+function renderSaved() {
+  const list = stories
+    .filter((s) => s.saved)
+    .sort((a, b) => String(b.saved_at || "").localeCompare(String(a.saved_at || "")));
+
+  feedNoteEl.textContent = `${list.length} saved`;
+  feedEl.innerHTML = "";
+
+  if (!list.length) {
+    feedEl.innerHTML = `<div class="empty">Nothing saved yet. Tap the bookmark on any story and it collects here, newest save first.</div>`;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  list.forEach((s) => {
+    const el = buildCard(s);
+    if (s.is_read) el.classList.add("was-read");
+    grid.appendChild(el);
+  });
+  feedEl.appendChild(grid);
+}
+
 function renderFeed() {
+  if (activeBucket === "saved") return renderSaved();
+
   let list = stories.filter((s) => activeBucket === "all" || s.bucket === activeBucket);
   if (activeTag !== "all") list = list.filter((s) => s.tag === activeTag);
 
@@ -521,6 +585,25 @@ async function markRead(story) {
   renderTabs();
   const { error } = await supabase.rpc("mark_story_read", { story_id: story.id });
   if (error) console.error("Failed to mark read:", error);
+}
+
+async function toggleSaved(story) {
+  const next = !story.saved;
+  story.saved = next;
+  story.saved_at = next ? new Date().toISOString() : null;
+  // Unsaving from the Saved view removes the card outright, so don't leave an
+  // open body pointing at a story that's no longer rendered.
+  if (!next && activeBucket === "saved" && openId === story.id) openId = null;
+  renderTabs();
+  renderFeed();
+
+  const { error } = await supabase.rpc("set_story_saved", { story_id: story.id, value: next });
+  if (error) {
+    console.error("Failed to save:", error);
+    story.saved = !next;
+    renderTabs();
+    renderFeed();
+  }
 }
 
 async function toggleDismissed(story) {
