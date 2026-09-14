@@ -79,7 +79,31 @@ grant execute on function mark_story_read(uuid) to anon;
 grant execute on function set_story_dismissed(uuid, boolean) to anon;
 
 
--- 4. Cache the generated long summary --------------------------------------
+-- 4. Saved articles --------------------------------------------------------
+-- A bookmark you set by hand. saved_at drives the Saved view's order, which is
+-- when you saved it, not when it was published.
+
+alter table stories add column if not exists saved boolean not null default false;
+alter table stories add column if not exists saved_at timestamptz;
+
+create index if not exists stories_saved_idx on stories (saved, saved_at desc);
+
+create or replace function set_story_saved(story_id uuid, value boolean)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update stories
+     set saved = value,
+         saved_at = case when value then now() else null end
+   where id = story_id;
+$$;
+
+grant execute on function set_story_saved(uuid, boolean) to anon;
+
+
+-- 5. Cache the generated long summary --------------------------------------
 -- Called by /api/summarize with the service role, so no anon grant needed.
 
 create or replace function save_story_summary(story_id uuid, body text)
