@@ -31,9 +31,9 @@ const BLOCKSFILES = { url: "https://blocksandfiles.com/feed/", tier: 2, kind: "p
 const STH = { url: "https://www.servethehome.com/feed/", tier: 2, kind: "press" };
 
 // --- Vendor blogs ----------------------------------------------------------
-// Removed: HPE community, Cisco newsroom, Broadcom (404); Juniper, Marvell (403,
-// bot-blocked at the edge — no URL will work). Vendor news still reaches these
-// beats through the per-beat Google News query, which indexes their newsrooms.
+// Removed: HPE community, Cisco newsroom, Broadcom (404); Juniper, Marvell, AMD
+// (403, bot-blocked at the edge — no URL will work). Vendor news still reaches
+// these beats through the per-beat Google News query, which indexes their newsrooms.
 const CISCO_BLOG = { url: "https://blogs.cisco.com/feed", tier: 1, kind: "press" };
 const ARISTA = { url: "https://blogs.arista.com/blog/rss.xml", tier: 1, kind: "press" };
 const NVIDIA = { url: "https://blogs.nvidia.com/feed/", tier: 1, kind: "press" };
@@ -45,6 +45,10 @@ const GCP = { url: "https://cloudblog.withgoogle.com/rss/", tier: 1, kind: "pres
 const AZURE = { url: "https://azure.microsoft.com/en-us/blog/feed/", tier: 1, kind: "press" };
 const CLOUDFLARE = { url: "https://blog.cloudflare.com/rss/", tier: 1, kind: "press" };
 const NETFLIX_ENG = { url: "https://netflixtechblog.com/feed", tier: 1, kind: "blog" };
+// General company blog, not networking-specific — relies on keywords + the
+// LLM's relevance gate to surface only the infra/networking posts (e.g. the
+// MRC supercomputer piece) out of everything else OpenAI publishes.
+const OPENAI_BLOG = { url: "https://openai.com/news/rss.xml", tier: 1, kind: "press" };
 
 // --- Standards bodies -----------------------------------------------------
 const OCP = { url: "https://www.opencompute.org/blog/rss", tier: 1, kind: "press" };
@@ -100,20 +104,25 @@ export const BUCKETS = [
     keywords: [
       "broadcom", "tomahawk", "jericho", "trident", "nvidia", "mellanox", "spectrum-x",
       "silicon one", "marvell", "asic", "switch chip", "optics", "co-packaged", "serdes",
-      "800g", "1.6t", "amd", "pensando",
+      "800g", "1.6t", "amd", "pensando", "helios", "rack-scale", "rackscale",
     ],
-    query: "Broadcom Tomahawk OR Nvidia Spectrum OR networking silicon OR co-packaged optics",
+    // AMD's own blog is bot-blocked (see note above), so its launches — e.g.
+    // Helios — depend on this query and trade-press pickup to surface at all.
+    query: "Broadcom Tomahawk OR Nvidia Spectrum OR AMD Helios OR networking silicon OR co-packaged optics",
     feeds: [NVIDIA, STH, DCD, NEXTPLATFORM, REGISTER, DCK, BLOCKSFILES],
   },
   {
     id: "ai_industry",
     label: "AI Industry & Broader Trends",
     keywords: [
-      "ai", "hyperscaler", "capex", "gpu", "cluster", "training", "inference",
-      "power", "grid", "cooling", "megawatt", "data center build",
+      "hyperscaler", "ai data center", "ai infrastructure", "gpu cluster",
+      "training cluster", "inference cluster", "ai supercomputer",
+      "supercomputer networking", "data center power", "power grid capacity",
+      "data center cooling", "liquid cooling", "megawatt", "data center build",
+      "data center capex",
     ],
     query: "AI data center hyperscaler capex power grid infrastructure",
-    feeds: [DCD, FIERCE, DCK, NETWORLD, META_ENG, AWS_NET, GCP, AZURE, CLOUDFLARE, NEXTPLATFORM, REGISTER],
+    feeds: [DCD, FIERCE, DCK, NETWORLD, META_ENG, AWS_NET, GCP, AZURE, CLOUDFLARE, NEXTPLATFORM, REGISTER, OPENAI_BLOG],
   },
   {
     id: "space",
@@ -131,7 +140,7 @@ export const BUCKETS = [
       "load balanc", "topology",
     ],
     query: "RDMA OR RoCE OR Ultra Ethernet Consortium OR InfiniBand OR NVLink standards",
-    feeds: [META_ENG, AWS_NET, NETFLIX_ENG, OCP, ETHERNET_ALLIANCE, DCD, NETWORLD, NEXTPLATFORM, STH],
+    feeds: [META_ENG, AWS_NET, NETFLIX_ENG, OCP, ETHERNET_ALLIANCE, DCD, NETWORLD, NEXTPLATFORM, STH, OPENAI_BLOG],
   },
 ];
 

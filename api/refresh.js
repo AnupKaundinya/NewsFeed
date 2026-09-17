@@ -147,9 +147,16 @@ Topic: "${bucket.label}".
 You are given real articles already collected from RSS feeds. Do NOT invent articles, facts, or URLs.
 Work only from the title and snippet provided.
 
-Choose AT MOST ${keep} — only the genuinely significant. Fewer is better than padding: an item that is
-routine, promotional, a rehash, or too thin to matter should be left out. "outlets_covering" tells you how
-many publishers filed the same story; broad coverage is evidence of significance but not proof.
+First, check relevance: an item earns a place only if it is actually about data center
+infrastructure, networking hardware/software, or this beat's ecosystem specifically — not just AI,
+compute, or energy in general. A keyword match alone does not make something relevant. If the item
+only mentions this beat in passing, or is a broader AI/tech/energy story without a data-center-specific
+angle, exclude it, regardless of how significant or well-covered it is elsewhere.
+
+Then, among what's left, choose AT MOST ${keep} — only the genuinely significant. Fewer is better than
+padding: an item that is routine, promotional, a rehash, or too thin to matter should be left out.
+"outlets_covering" tells you how many publishers filed the same story; broad coverage is evidence of
+significance but not proof, and it never substitutes for relevance.
 ${ex.liked.length ? `\nStories this user explicitly flagged as worth surfacing:\n${ex.liked.map((h) => `- ${h}`).join("\n")}` : ""}
 ${ex.disliked.length ? `\nStories this user marked NOT relevant — avoid this kind:\n${ex.disliked.map((h) => `- ${h}`).join("\n")}` : ""}
 

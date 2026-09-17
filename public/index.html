@@ -56,14 +56,16 @@
   .brand{font-family:var(--font-heading);font-weight:500;font-size:15px;letter-spacing:.01em;margin-right:auto;}
   .stamp{font-size:12px;color:var(--color-neutral-600);white-space:nowrap;}
 
-  .icon-btn{
+  .menu-btn{
     background:transparent;border:1px solid var(--color-divider);color:var(--color-neutral-400);
-    width:30px;height:30px;border-radius:var(--radius-sm);cursor:pointer;
-    font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex:none;
-    transition:border-color .18s ease,color .18s ease;
+    font-family:var(--font-heading);font-weight:500;font-size:12.5px;
+    padding:7px 13px;border-radius:var(--radius-sm);cursor:pointer;flex:none;
+    display:flex;align-items:center;gap:7px;transition:border-color .18s ease,color .18s ease;
   }
-  .icon-btn:hover{border-color:var(--color-accent);color:var(--color-accent-300);}
-  .icon-btn[aria-expanded="true"]{border-color:var(--color-accent);color:var(--color-accent-300);}
+  .menu-btn:hover{border-color:var(--color-accent);color:var(--color-accent-300);}
+  .menu-btn[aria-expanded="true"]{border-color:var(--color-accent);color:var(--color-accent-300);}
+  .menu-dot{width:6px;height:6px;border-radius:6px;background:var(--color-accent);display:none;}
+  .menu-dot.show{display:block;}
 
   .refresh-btn{
     background:transparent;border:1px solid var(--color-accent);color:var(--color-accent-300);
@@ -102,8 +104,12 @@
 
   .rule{height:1px;background:linear-gradient(90deg,transparent 0,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent 100%);}
 
-  .progress{height:2px;background:transparent;overflow:hidden;}
-  .progress .fill{height:100%;width:0;background:var(--color-accent);transition:width .3s ease;}
+  .progress{height:3px;background:transparent;overflow:hidden;transition:background .2s ease;}
+  .progress.active{background:var(--color-neutral-900);}
+  .progress .fill{
+    height:100%;width:0;background:var(--color-accent);transition:width .3s ease;
+    box-shadow:0 0 8px color-mix(in srgb, var(--color-accent) 70%, transparent);
+  }
 
   /* ---------- menu ---------- */
   .menu{
@@ -146,7 +152,10 @@
     box-shadow:var(--shadow-sm);transition:box-shadow .18s ease,opacity .2s ease;
   }
   .card:hover{box-shadow:var(--shadow-md);}
-  .card.open{grid-column:1 / -1;}
+  .card.open{
+    grid-column:1 / -1;border:1px solid var(--color-accent-700);
+    box-shadow:0 0 0 1px var(--color-accent-700), var(--shadow-md);
+  }
   .card.dismissed{opacity:.4;}
   .card.dismissed .card-title{text-decoration:line-through;text-decoration-thickness:1px;}
   .card.was-read{opacity:.72;}
@@ -166,6 +175,13 @@
   .dot{width:5px;height:5px;border-radius:5px;background:var(--color-accent);flex:none;}
   .dot.read{background:transparent;}
   .kicker{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--color-accent-300);}
+  .kicker[data-tag="Product Launch"]{color:#7dd3fc;}
+  .kicker[data-tag="Earnings"]{color:#86efac;}
+  .kicker[data-tag="Partnership"]{color:#fcd34d;}
+  .kicker[data-tag="AI Fabric"]{color:#c4b5fd;}
+  .kicker[data-tag="Executive Move"]{color:#fda4af;}
+  .kicker[data-tag="Industry Standard"]{color:#67e8f9;}
+  .kicker[data-tag="Other"]{color:var(--color-neutral-500);}
   .when{font-size:11.5px;color:var(--color-neutral-600);margin-left:auto;white-space:nowrap;}
   .card-title{font-family:var(--font-heading);font-weight:500;font-size:19px;line-height:1.25;letter-spacing:-.012em;}
   .card-teaser{font-size:14px;line-height:1.5;margin:0;color:var(--color-neutral-500);}
@@ -177,6 +193,11 @@
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .summary{font-size:14px;line-height:1.65;margin:0 0 16px;color:var(--color-neutral-300);max-width:62em;}
   .summary.pending{color:var(--color-neutral-600);font-style:italic;}
+  .summary.pending::before{
+    content:"";display:inline-block;width:9px;height:9px;margin-right:8px;vertical-align:-1px;
+    border-radius:50%;border:1.5px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+    border-top-color:var(--color-accent-300);animation:spin .7s linear infinite;
+  }
   .actions{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
   .link{font-family:var(--font-heading);font-weight:500;font-size:12.5px;text-decoration:none;}
   .text-btn{background:transparent;border:0;padding:0;font-size:12.5px;color:var(--color-neutral-600);cursor:pointer;transition:color .18s ease;}
@@ -193,7 +214,8 @@
   .pile-meta{font-size:12px;color:var(--color-neutral-600);margin-bottom:8px;}
   .pile-title{font-family:var(--font-heading);font-weight:500;font-size:15px;line-height:1.3;color:var(--color-neutral-500);}
 
-  .empty{padding:80px 0;color:var(--color-neutral-600);font-size:14px;max-width:34em;}
+  .empty{padding:80px 0;color:var(--color-neutral-600);font-size:14px;max-width:34em;display:flex;gap:14px;align-items:flex-start;}
+  .empty svg{width:22px;height:22px;flex:none;margin-top:2px;color:var(--color-neutral-700);}
 
   /* pull-to-refresh indicator */
   .pull{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:30;}
@@ -227,11 +249,13 @@
     <span class="brand">NewsFeed</span>
     <span class="stamp" id="stamp">—</span>
     <button class="refresh-btn" id="refresh-btn"><span class="spin"></span><span id="refresh-label">Refresh</span></button>
-    <button class="icon-btn" id="menu-btn" aria-expanded="false" aria-label="More">⋯</button>
+    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-label="Filters and add a story">
+      <span>Filters</span><span class="menu-dot" id="menu-dot"></span>
+    </button>
   </div>
   <div class="tabs" id="tabs"></div>
   <div class="rule"></div>
-  <div class="progress"><div class="fill" id="progress-fill"></div></div>
+  <div class="progress" id="progress-track"><div class="fill" id="progress-fill"></div></div>
 </div>
 
 <div class="menu" id="menu">
@@ -317,7 +341,9 @@ const feedNoteEl = document.getElementById("feed-note");
 const refreshBtn = document.getElementById("refresh-btn");
 const refreshLabel = document.getElementById("refresh-label");
 const progressFill = document.getElementById("progress-fill");
+const progressTrack = document.getElementById("progress-track");
 const menuBtn = document.getElementById("menu-btn");
+const menuDot = document.getElementById("menu-dot");
 const menuEl = document.getElementById("menu");
 const tagFilterEl = document.getElementById("tag-filter");
 const submitUrl = document.getElementById("submit-url");
@@ -329,6 +355,7 @@ const pullEl = document.getElementById("pull");
 
 const BOOKMARK_OUTLINE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.56V48H184Z"></path></svg>';
 const BOOKMARK_FILL = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Z"></path></svg>';
+const INFO_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm12-88a12,12,0,0,1-24,0V88a12,12,0,0,1,24,0Zm-12,44a12,12,0,1,1,12-12A12,12,0,0,1,128,172Z"></path></svg>';
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -407,7 +434,7 @@ function cardMarkup(s) {
   return `
     <div class="card-meta">
       <span class="dot ${s.is_read ? "read" : ""}"></span>
-      <span class="kicker">${esc(s.tag)}</span>
+      <span class="kicker" data-tag="${esc(s.tag)}">${esc(s.tag)}</span>
       <span class="when">${relativeDay(dayOf(s))}</span>
       <button class="save-btn js-save ${s.saved ? "on" : ""}" aria-pressed="${s.saved ? "true" : "false"}" aria-label="${s.saved ? "Remove from saved" : "Save article"}" title="${s.saved ? "Remove from saved" : "Save"}">${s.saved ? BOOKMARK_FILL : BOOKMARK_OUTLINE}</button>
     </div>
@@ -430,6 +457,7 @@ function cardMarkup(s) {
 function buildCard(s) {
   const el = document.createElement("article");
   el.className = "card" + (openId === s.id ? " open" : "") + (s.dismissed ? " dismissed" : "");
+  el.dataset.storyId = s.id;
   el.innerHTML = cardMarkup(s);
 
   el.querySelector(".js-dismiss").addEventListener("click", (e) => {
@@ -451,6 +479,8 @@ function buildCard(s) {
     if (opening) {
       if (!s.summary) ensureSummary(s);
       if (!s.is_read) markRead(s);
+      document.querySelector(`[data-story-id="${s.id}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   });
 
@@ -468,7 +498,7 @@ function renderSaved() {
   feedEl.innerHTML = "";
 
   if (!list.length) {
-    feedEl.innerHTML = `<div class="empty">Nothing saved yet. Tap the bookmark on any story and it collects here, newest save first.</div>`;
+    feedEl.innerHTML = `<div class="empty">${BOOKMARK_OUTLINE}<span>Nothing saved yet. Tap the bookmark on any story and it collects here, newest save first.</span></div>`;
     return;
   }
 
@@ -498,7 +528,7 @@ function renderFeed() {
   feedEl.innerHTML = "";
 
   if (!list.length) {
-    feedEl.innerHTML = `<div class="empty">Nothing in this beat yet. Refresh to check the feeds, or add a story it missed from the ⋯ menu.</div>`;
+    feedEl.innerHTML = `<div class="empty">${INFO_ICON}<span>Nothing in this beat yet. Refresh to check the feeds, or add a story it missed from the Filters menu.</span></div>`;
     return;
   }
 
@@ -634,7 +664,7 @@ async function loadStories() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    feedEl.innerHTML = `<div class="empty">Couldn't load stories — check the Supabase keys in index.html.</div>`;
+    feedEl.innerHTML = `<div class="empty">${INFO_ICON}<span>Couldn't load stories — check the Supabase keys in index.html.</span></div>`;
     console.error(error);
     return;
   }
@@ -660,6 +690,7 @@ async function triggerRefresh() {
   refreshing = true;
   refreshBtn.disabled = true;
   refreshBtn.classList.add("loading");
+  progressTrack.classList.add("active");
   progressFill.style.width = "0%";
 
   let cursor = 0;
@@ -700,6 +731,7 @@ async function triggerRefresh() {
     refreshBtn.disabled = false;
     setTimeout(() => {
       refreshLabel.textContent = "Refresh";
+      progressTrack.classList.remove("active");
       progressFill.style.width = "0%";
     }, 3500);
   }
@@ -759,6 +791,7 @@ menuBtn.addEventListener("click", () => {
 tagFilterEl.addEventListener("change", (e) => {
   activeTag = e.target.value;
   openId = null;
+  menuDot.classList.toggle("show", activeTag !== "all");
   renderFeed();
 });
 
