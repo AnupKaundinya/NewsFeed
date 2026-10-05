@@ -20,7 +20,8 @@ async function loadLearning() {
     .order("created_at", { ascending: false })
     .limit(300);
 
-  if (error) throw new Error(`signals read failed: ${error.message}`);
+  // Learning only tunes ranking — if signals can't be read, run unpersonalized rather than fail.
+  if (error) console.warn(`signals read failed, continuing without learning: ${error.message}`);
 
   const trustedDomains = new Map();   // domain -> boost
   const badDomains = new Map();       // domain -> penalty
@@ -44,7 +45,7 @@ async function loadLearning() {
     if (s.bucket) examples.set(s.bucket, ex);
   }
 
-  return { trustedDomains, badDomains, learnedTerms, examples };
+  return { trustedDomains, badDomains, learnedTerms, examples, degraded: !!error };
 }
 
 // ---------------------------------------------------------------------------
@@ -299,6 +300,7 @@ export default async function handler(req, res) {
       total_buckets: BUCKETS.length,
       buckets: report,
       stories_inserted: inserted,
+      ...(learning.degraded ? { learning_unavailable: true } : {}),
       feed_health: feedHealth.flatMap((b) =>
         b.feeds.filter((f) => !f.ok || f.items === 0).map((f) => ({ bucket: b.bucket, ...f }))
       ),
