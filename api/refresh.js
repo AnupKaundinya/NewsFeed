@@ -210,6 +210,7 @@ Use { "selected": [] } if nothing in the list is worth the user's attention.`;
       tag: TAGS.includes(r.tag) ? r.tag : "Other",
       source: src.source,                // from the feed, not the model
       url: src.url,                      // from the feed — cannot be fabricated
+      domain: src.domain,                // publisher's domain, even for news.google.com links
       is_blog: src.is_blog,
       published_at: src.published_at,
       found_on: pacificToday(),

@@ -137,6 +137,7 @@ Return ONLY a JSON object (no fences, no preamble):
       tag: TAGS.includes(labelled.tag) ? labelled.tag : "Other",
       source,
       url: clean,
+      domain,
       is_blog: false,
       published_at,
       found_on: pacificToday(),
