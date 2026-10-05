@@ -114,3 +114,10 @@ set search_path = public
 as $$
   update stories set summary = body where id = story_id;
 $$;
+
+
+-- 6. Publisher domain ------------------------------------------------------
+-- Google News stories link to news.google.com, so the publisher's domain is
+-- stored separately. Dismiss signals use it to down-weight the real source.
+
+alter table stories add column if not exists domain text;

@@ -1,5 +1,14 @@
 import { supabase, domainOf } from "./_lib/util.js";
 
+// Google News links all resolve to news.google.com, so older stories saved before
+// the domain column existed have no usable domain — record none rather than
+// penalizing Google News as a whole.
+function publisherDomain(story) {
+  if (story.domain) return story.domain;
+  const d = domainOf(story.url);
+  return d === "news.google.com" ? null : d;
+}
+
 // Marks a story not-relevant (or undoes it) and records the negative signal
 // that down-weights its domain and steers future selection.
 export default async function handler(req, res) {
@@ -16,7 +25,7 @@ export default async function handler(req, res) {
   try {
     const { data: story, error: readErr } = await supabase
       .from("stories")
-      .select("id, bucket, url, headline")
+      .select("id, bucket, url, domain, headline")
       .eq("id", story_id)
       .maybeSingle();
 
@@ -34,7 +43,7 @@ export default async function handler(req, res) {
         kind: "dismiss",
         bucket: story.bucket,
         url: story.url,
-        domain: domainOf(story.url),
+        domain: publisherDomain(story),
         headline: story.headline,
       });
       if (sigErr) throw new Error(sigErr.message);
