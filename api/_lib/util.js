@@ -244,6 +244,9 @@ export async function readFeed(feed) {
     url: typeof it.link === "string" ? it.link : it.link?.["@_href"] || textOf(it.guid) || "",
     date: it.pubDate || it["dc:date"] || null,
     body: stripHtml(it.description || it["content:encoded"] || ""),
+    // Google News names the real publisher here; its <link> always points at news.google.com.
+    publisher: stripHtml(textOf(it.source)),
+    publisherUrl: it.source?.["@_url"] || "",
   }));
 
   const atom = asArray(doc?.feed?.entry).map((e) => ({
@@ -257,13 +260,19 @@ export async function readFeed(feed) {
     .filter((i) => i.rawTitle && i.url && /^https?:/i.test(i.url))
     .filter((i) => !feed.minWords || splitSource(i.rawTitle, "").title.split(/\s+/).length >= feed.minWords)
     .map((i) => {
-      const { title, source } = splitSource(i.rawTitle, feedTitle);
+      let { title, source } = splitSource(i.rawTitle, feedTitle);
+      if (i.publisher) {
+        // splitSource caps the suffix length, so long publisher names would stay in the title.
+        const suffix = ` - ${i.publisher}`;
+        if (i.rawTitle.endsWith(suffix)) title = i.rawTitle.slice(0, -suffix.length).trim();
+        source = i.publisher;
+      }
       const d = i.date ? new Date(i.date) : null;
       return {
         title,
         source,
         url: normalizeUrl(i.url),
-        domain: domainOf(i.url),
+        domain: domainOf(i.publisherUrl || i.url),   // publisher's domain, so the blocklist applies
         body: i.body.slice(0, 700),
         published_at: d && !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : null,
         tier: feed.tier,
