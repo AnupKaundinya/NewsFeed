@@ -19,12 +19,14 @@ export function gnews(query) {
 
 // --- Trade press -----------------------------------------------------------
 const DCD = { url: "https://www.datacenterdynamics.com/en/rss/", tier: 1, kind: "press" };
-const FIERCE = { url: "https://www.fierce-network.com/rss.xml", tier: 1, kind: "press" };
+// Fierce and SDxCentral 403 their RSS to any non-browser fetch, so they're read
+// through a site-restricted Google News search instead, keeping their own tier.
+const FIERCE = { url: gnews("site:fierce-network.com when:21d"), tier: 1, kind: "press" };
 const DCK = { url: "https://www.datacenterknowledge.com/rss.xml", tier: 1, kind: "press" };
 const NETWORLD = { url: "https://www.networkworld.com/feed/", tier: 1, kind: "press" };
 
 const REGISTER = { url: "https://www.theregister.com/headlines.atom", tier: 2, kind: "press" };
-const SDX = { url: "https://www.sdxcentral.com/feed/", tier: 2, kind: "press" };
+const SDX = { url: gnews("site:sdxcentral.com when:21d"), tier: 2, kind: "press" };
 const LIGHTREADING = { url: "https://www.lightreading.com/rss.xml", tier: 2, kind: "press" };
 const NEXTPLATFORM = { url: "https://www.nextplatform.com/feed/", tier: 2, kind: "press" };
 const BLOCKSFILES = { url: "https://blocksandfiles.com/feed/", tier: 2, kind: "press" };
@@ -71,7 +73,8 @@ export const REJECT_PATTERNS = [
   /\b(sponsored|advertorial|partner content|promoted)\b/i,
   /\b(stock|shares|price target|buy rating|sell rating|analyst rating)\b/i,
   /\b(should you (buy|sell)|is it time to buy)\b/i,
-  /\b(deals?|discount|coupon|black friday|cyber monday)\b/i,
+  // shopping posts only — a bare "deal" is usually a contract or acquisition here
+  /\b(deals? of the (day|week)|best deals?|discount|coupon|promo code|black friday|cyber monday)\b/i,
   /\b(quiz|horoscope|listicle)\b/i,
   /^\s*(watch|listen|podcast|episode\s+\d+)\b/i,
 ];
