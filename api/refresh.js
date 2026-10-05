@@ -116,6 +116,25 @@ function scoreCandidates(candidates, learning) {
   return candidates.sort((a, b) => b.score - a.score);
 }
 
+// ---------------------------------------------------------------------------
+// Same-event matching. Many outlets (and many Google News URLs) carry one story,
+// so URL dedupe alone lets it in again and again. Words every story on the beat
+// shares ("space", "data", "center") don't count as evidence of a match.
+// ---------------------------------------------------------------------------
+const stem = (t) => t.replace(/(es|s)$/, "");
+
+function beatTerms(bucket) {
+  return new Set(significantTerms([bucket.label, bucket.query, ...bucket.keywords].join(" ")).map(stem));
+}
+
+function sameStory(a, b, common) {
+  const A = [...new Set(significantTerms(a).map(stem))].filter((t) => !common.has(t));
+  const B = new Set(significantTerms(b).map(stem).filter((t) => !common.has(t)));
+  if (!A.length || !B.size) return false;
+  const shared = A.filter((t) => B.has(t)).length;
+  return shared >= 2 && shared / Math.min(A.length, B.size) >= 0.5;
+}
+
 // A feed description is usable as-is when it's a real sentence or two.
 function usableTeaser(body) {
   if (!body) return null;
@@ -247,14 +266,30 @@ export default async function handler(req, res) {
         if (error) throw new Error(`dedupe check failed: ${error.message}`);
         known = new Set((data || []).map((d) => d.dedupe_key));
       }
-      const fresh = candidates.filter((c) => !known.has(dedupeKey(bucket.id, c.url)));
+      // ...and anything covering an event this beat already stored recently.
+      const since = new Date(Date.now() - BACKFILL_WINDOW * 86400000).toISOString();
+      const { data: recent, error: recentError } = await supabase
+        .from("stories")
+        .select("headline")
+        .eq("bucket", bucket.id)
+        .gte("created_at", since);
+      if (recentError) throw new Error(`recent stories read failed: ${recentError.message}`);
+      const storedHeadlines = (recent || []).map((r) => r.headline);
+      const common = beatTerms(bucket);
+      const isRepeat = (title) => storedHeadlines.some((h) => sameStory(title, h, common));
+
+      const fresh = candidates.filter((c) => !known.has(dedupeKey(bucket.id, c.url)) && !isRepeat(c.title));
 
       if (!fresh.length) {
         report.push({ bucket: bucket.id, candidates: candidates.length, new: 0, kept: 0, llm_calls: 0 });
         continue;
       }
 
-      const ranked = scoreCandidates(fresh, learning);
+      // One candidate per event: the best-scored version of each story reaches the model.
+      const ranked = [];
+      for (const c of scoreCandidates(fresh, learning)) {
+        if (!ranked.some((r) => sameStory(c.title, r.title, common))) ranked.push(c);
+      }
       const shortlist = ranked.slice(0, SHORTLIST);
       let stories = await selectAndLabel(bucket, shortlist, learning, perBucket);
       let llmCalls = 1;
@@ -268,6 +303,9 @@ export default async function handler(req, res) {
           llmCalls = 2;
         }
       }
+
+      // The model rewrites headlines, so check its output against stored stories too.
+      stories = stories.filter((s) => !isRepeat(s.headline));
 
       rows.push(...stories);
       report.push({

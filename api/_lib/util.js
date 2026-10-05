@@ -161,7 +161,8 @@ export function stripHtml(s = "") {
 }
 
 const STOP = new Set(("a an the and or of for to in on at by with from as is are was were be been " +
-  "its it this that these those new news says said report reports will can could may")
+  "its it this that these those new news says said report reports will can could may " +
+  "into onto over under after about than their they them what when where which while have has")
   .split(" "));
 
 // Distinctive terms from a headline — used for corroboration matching and
@@ -254,6 +255,7 @@ export async function readFeed(feed) {
 
   const items = [...rss, ...atom]
     .filter((i) => i.rawTitle && i.url && /^https?:/i.test(i.url))
+    .filter((i) => !feed.minWords || splitSource(i.rawTitle, "").title.split(/\s+/).length >= feed.minWords)
     .map((i) => {
       const { title, source } = splitSource(i.rawTitle, feedTitle);
       const d = i.date ? new Date(i.date) : null;

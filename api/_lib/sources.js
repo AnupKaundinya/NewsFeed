@@ -26,7 +26,9 @@ const DCK = { url: "https://www.datacenterknowledge.com/rss.xml", tier: 1, kind:
 const NETWORLD = { url: "https://www.networkworld.com/feed/", tier: 1, kind: "press" };
 
 const REGISTER = { url: "https://www.theregister.com/headlines.atom", tier: 2, kind: "press" };
-const SDX = { url: gnews("site:sdxcentral.com when:21d"), tier: 2, kind: "press" };
+// Most of SDxCentral's indexed URLs are tag/author/event pages ("News - Bob Victor",
+// "HPE Networking Investor Day 2026"); real headlines run longer, so require 6+ words.
+const SDX = { url: gnews("site:sdxcentral.com when:21d"), tier: 2, kind: "press", minWords: 6 };
 const LIGHTREADING = { url: "https://www.lightreading.com/rss.xml", tier: 2, kind: "press" };
 const NEXTPLATFORM = { url: "https://www.nextplatform.com/feed/", tier: 2, kind: "press" };
 const BLOCKSFILES = { url: "https://blocksandfiles.com/feed/", tier: 2, kind: "press" };
@@ -77,6 +79,7 @@ export const REJECT_PATTERNS = [
   /\b(deals? of the (day|week)|best deals?|discount|coupon|promo code|black friday|cyber monday)\b/i,
   /\b(quiz|horoscope|listicle)\b/i,
   /^\s*(watch|listen|podcast|episode\s+\d+)\b/i,
+  /^\s*(news|analysis|editors' views|opinion|topics?)\s+-\s+/i,   // section/tag landing pages
 ];
 
 export const BUCKETS = [
