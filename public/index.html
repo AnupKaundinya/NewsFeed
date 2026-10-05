@@ -85,23 +85,6 @@
   .refresh-btn.loading .spin{display:block;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  .tabs{display:flex;padding:0 32px;}
-  .tab{
-    position:relative;flex:1;min-width:0;text-align:left;
-    background:transparent;border:0;cursor:pointer;white-space:nowrap;
-    font-family:var(--font-heading);font-weight:500;font-size:19px;letter-spacing:-.015em;
-    color:var(--color-neutral-600);padding:14px 0 16px;
-    transition:color .18s ease;
-  }
-  .tab:hover{color:var(--color-neutral-400);}
-  .tab.active{color:var(--color-text);}
-  .tab .mark{position:absolute;left:0;right:8px;bottom:0;height:2px;border-radius:2px;background:transparent;transition:background .18s ease;}
-  .tab.active .mark{background:var(--color-accent);}
-  .tab .count{font-size:12px;color:var(--color-accent-300);vertical-align:super;margin-left:3px;}
-  .tab.tab-saved{flex:none;margin-left:28px;display:flex;align-items:center;gap:7px;}
-  .tab.tab-saved svg{width:15px;height:15px;display:block;}
-  .tab.tab-saved .mark{right:0;}
-
   .rule{height:1px;background:linear-gradient(90deg,transparent 0,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent 100%);}
 
   .progress{height:3px;background:transparent;overflow:hidden;transition:background .2s ease;}
@@ -140,56 +123,77 @@
   .note{font-size:11.5px;line-height:1.5;color:var(--color-neutral-600);}
   .note.err{color:var(--color-accent-300);}
 
-  /* ---------- feed ---------- */
-  .feed{padding:36px 32px 110px;}
-  .day{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600);margin:0 0 20px;}
-  .day-block{margin-bottom:36px;}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
-
-  .card{
-    background:var(--color-surface);border-radius:var(--radius-md);padding:20px;
-    cursor:pointer;display:flex;flex-direction:column;gap:12px;
-    box-shadow:var(--shadow-sm);transition:box-shadow .18s ease,opacity .2s ease;
+  /* ---------- layout: sidebar + feed ---------- */
+  .layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;max-width:1160px;margin:0 auto;padding:28px 32px 110px;}
+  .side{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:transparent;border:0;border-radius:999px;cursor:pointer;
+    font-family:var(--font-heading);font-weight:500;font-size:14px;
+    color:var(--color-neutral-400);padding:9px 16px;transition:background .18s ease,color .18s ease;
   }
-  .card:hover{box-shadow:var(--shadow-md);}
-  .card.open{
-    grid-column:1 / -1;border:1px solid var(--color-accent-700);
-    box-shadow:0 0 0 1px var(--color-accent-700), var(--shadow-md);
-  }
-  .card.dismissed{opacity:.4;}
-  .card.dismissed .card-title{text-decoration:line-through;text-decoration-thickness:1px;}
-  .card.was-read{opacity:.72;}
-  .card.was-read:hover{opacity:1;}
+  .nav-item:hover{background:color-mix(in srgb, var(--color-neutral-700) 35%, transparent);color:var(--color-text);}
+  .nav-item.active{background:color-mix(in srgb, var(--color-accent) 20%, transparent);color:var(--color-accent-300);}
+  .nav-item svg{width:16px;height:16px;flex:none;display:block;}
+  .nav-swatch{width:9px;height:9px;border-radius:3px;flex:none;margin:0 3.5px;}
+  .nav-item .count{margin-left:auto;font-size:12px;color:var(--color-neutral-500);}
+  .nav-item.active .count{color:var(--color-accent-300);}
+  .nav-sep{height:1px;background:var(--color-divider);margin:10px 16px;}
 
-  .save-btn{
-    background:transparent;border:0;padding:0;margin-left:2px;cursor:pointer;flex:none;
-    color:var(--color-neutral-600);display:flex;align-items:center;transition:color .18s ease;
-  }
-  .save-btn svg{width:16px;height:16px;display:block;}
-  .save-btn:hover{color:var(--color-accent-300);}
-  .save-btn:active{color:var(--color-accent-400);}
-  .save-btn.on{color:var(--color-accent);}
-  .save-btn.on:hover{color:var(--color-accent-300);}
+  .feed-head{margin:0 0 22px;}
+  .feed-title{font-size:24px;letter-spacing:-.02em;}
+  .feed-sub{font-size:13px;color:var(--color-neutral-600);margin-top:4px;}
 
-  .card-meta{display:flex;align-items:center;gap:12px;}
-  .dot{width:5px;height:5px;border-radius:5px;background:var(--color-accent);flex:none;}
-  .dot.read{background:transparent;}
-  .kicker{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--color-accent-300);}
+  /* ---------- story clusters ---------- */
+  .cluster{
+    background:var(--color-surface);border-radius:var(--radius-md);padding:20px 22px;margin-bottom:16px;
+    box-shadow:var(--shadow-sm);transition:box-shadow .18s ease;
+  }
+  .cluster:hover{box-shadow:var(--shadow-md);}
+  .cluster.faded{opacity:.72;}
+  .cluster.faded:hover{opacity:1;}
+
+  .story{cursor:pointer;}
+  .story + .story{border-top:1px solid var(--color-divider);margin-top:14px;padding-top:14px;}
+  .src-line{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--color-neutral-400);min-width:0;}
+  .avatar{
+    width:18px;height:18px;border-radius:4px;flex:none;display:inline-flex;align-items:center;justify-content:center;
+    font-size:10.5px;font-weight:600;color:#161826;
+  }
+  .src-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22em;}
+  .when{color:var(--color-neutral-600);white-space:nowrap;}
+  .dot{width:6px;height:6px;border-radius:6px;background:var(--color-accent);flex:none;}
+  .trail{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
+  .beat-pill{font-size:11px;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb, var(--beat) 16%, transparent);color:var(--beat);}
+
+  .kicker{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--color-accent-300);white-space:nowrap;}
   .kicker[data-tag="Product Launch"]{color:#7dd3fc;}
   .kicker[data-tag="Earnings"]{color:#86efac;}
   .kicker[data-tag="Partnership"]{color:#fcd34d;}
   .kicker[data-tag="AI Fabric"]{color:#c4b5fd;}
   .kicker[data-tag="Executive Move"]{color:#fda4af;}
   .kicker[data-tag="Industry Standard"]{color:#67e8f9;}
-  .kicker[data-tag="Other"]{color:var(--color-neutral-500);}
-  .when{font-size:11.5px;color:var(--color-neutral-600);margin-left:auto;white-space:nowrap;}
-  .card-title{font-family:var(--font-heading);font-weight:500;font-size:19px;line-height:1.25;letter-spacing:-.012em;}
-  .card-teaser{font-size:14px;line-height:1.5;margin:0;color:var(--color-neutral-500);}
-  .card-source{font-size:11.5px;color:var(--color-neutral-600);margin-top:auto;display:flex;gap:8px;align-items:center;}
-  .badge{color:var(--color-accent-300);font-style:italic;}
+  .kicker[data-tag="Other"]{display:none;}
+  .badge{color:var(--color-accent-300);font-style:italic;white-space:nowrap;}
 
-  .card-body{display:none;padding-top:16px;margin-top:4px;border-top:1px solid var(--color-divider);animation:fade .22s ease;}
-  .card.open .card-body{display:block;}
+  .story-title{font-family:var(--font-heading);font-weight:500;font-size:15.5px;line-height:1.32;letter-spacing:-.008em;margin:7px 0 0;}
+  .story.lead .story-title{font-size:20px;line-height:1.25;letter-spacing:-.014em;}
+  .story:hover .story-title{color:var(--color-accent-300);}
+  .lead-teaser{font-size:14px;line-height:1.5;margin:8px 0 0;color:var(--color-neutral-500);}
+  .story.read .story-title{color:var(--color-neutral-500);}
+  .story.dismissed{opacity:.4;}
+  .story.dismissed .story-title{text-decoration:line-through;text-decoration-thickness:1px;}
+
+  .save-btn{
+    background:transparent;border:0;padding:0;cursor:pointer;flex:none;
+    color:var(--color-neutral-600);display:flex;align-items:center;transition:color .18s ease;
+  }
+  .save-btn svg{width:16px;height:16px;display:block;}
+  .save-btn:hover{color:var(--color-accent-300);}
+  .save-btn.on{color:var(--color-accent);}
+
+  .story-body{display:none;padding-top:14px;margin-top:14px;border-top:1px solid var(--color-divider);animation:fade .22s ease;cursor:default;}
+  .story.open .story-body{display:block;}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .summary{font-size:14px;line-height:1.65;margin:0 0 16px;color:var(--color-neutral-300);max-width:62em;}
   .summary.pending{color:var(--color-neutral-600);font-style:italic;}
@@ -203,18 +207,21 @@
   .text-btn{background:transparent;border:0;padding:0;font-size:12.5px;color:var(--color-neutral-600);cursor:pointer;transition:color .18s ease;}
   .text-btn:hover{color:var(--color-accent-300);}
 
-  /* ---------- read pile ---------- */
-  .pile{border-top:1px solid var(--color-divider);padding-top:24px;}
-  .pile-toggle{background:transparent;border:0;padding:0;font-family:var(--font-heading);font-weight:500;font-size:12.5px;color:var(--color-neutral-500);cursor:pointer;transition:color .18s ease;}
-  .pile-toggle:hover{color:var(--color-accent-300);}
-  .pile-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:20px;}
-  .pile-grid.open{display:grid;}
-  .pile-card{border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:border-color .18s ease;}
-  .pile-card:hover{border-color:var(--color-neutral-700);}
-  .pile-meta{font-size:12px;color:var(--color-neutral-600);margin-bottom:8px;}
-  .pile-title{font-family:var(--font-heading);font-weight:500;font-size:15px;line-height:1.3;color:var(--color-neutral-500);}
+  .coverage{
+    display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 14px;
+    background:transparent;border:1px solid var(--color-divider);border-radius:999px;cursor:pointer;
+    font-family:var(--font-heading);font-weight:500;font-size:12.5px;color:var(--color-accent-300);
+    transition:border-color .18s ease;
+  }
+  .coverage:hover{border-color:var(--color-accent);}
+  .coverage svg{width:14px;height:14px;display:block;}
 
-  .empty{padding:80px 0;color:var(--color-neutral-600);font-size:14px;max-width:34em;display:flex;gap:14px;align-items:flex-start;}
+  /* ---------- read pile ---------- */
+  .pile{border-top:1px solid var(--color-divider);padding-top:24px;margin-top:28px;}
+  .pile-toggle{background:transparent;border:0;padding:0;margin-bottom:16px;font-family:var(--font-heading);font-weight:500;font-size:12.5px;color:var(--color-neutral-500);cursor:pointer;transition:color .18s ease;}
+  .pile-toggle:hover{color:var(--color-accent-300);}
+
+  .empty{padding:60px 0;color:var(--color-neutral-600);font-size:14px;max-width:34em;display:flex;gap:14px;align-items:flex-start;}
   .empty svg{width:22px;height:22px;flex:none;margin-top:2px;color:var(--color-neutral-700);}
 
   /* pull-to-refresh indicator */
@@ -229,14 +236,20 @@
 
   @media (max-width:820px){
     .bar{padding:14px 18px 4px;}
-    .tabs{padding:0 18px;overflow-x:auto;}
-    .tab{flex:none;font-size:16px;padding:12px 0 14px;margin-right:22px;}
-    .tab.tab-saved{margin-left:12px;}
-    .tab .mark{right:0;}
-    .feed{padding:24px 18px 90px;}
     .menu{padding:18px;}
     .stamp{display:none;}
-    .grid,.pile-grid{grid-template-columns:1fr;}
+    .layout{grid-template-columns:minmax(0,1fr);gap:18px;padding:16px 18px 90px;}
+    .side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none;}
+    .side::-webkit-scrollbar{display:none;}
+    .nav-item{width:auto;flex:none;padding:7px 14px;font-size:13px;border:1px solid var(--color-divider);}
+    .nav-item.active{border-color:transparent;}
+    .nav-item .count{margin-left:2px;}
+    .nav-sep{display:none;}
+    .feed-title{font-size:20px;}
+    .cluster{padding:16px;}
+    .story.lead .story-title{font-size:18px;}
+    .src-name{max-width:12em;}
+    .src-line .kicker{display:none;}   /* publisher name wins the narrow line; filter by tag from the menu */
   }
 </style>
 </head>
@@ -253,7 +266,6 @@
       <span>Filters</span><span class="menu-dot" id="menu-dot"></span>
     </button>
   </div>
-  <div class="tabs" id="tabs"></div>
   <div class="rule"></div>
   <div class="progress" id="progress-track"><div class="fill" id="progress-fill"></div></div>
 </div>
@@ -287,7 +299,16 @@
   </div>
 </div>
 
-<div class="feed" id="feed"></div>
+<div class="layout">
+  <nav class="side" id="side" aria-label="Beats"></nav>
+  <main>
+    <div class="feed-head">
+      <h1 class="feed-title" id="feed-title">Top stories</h1>
+      <div class="feed-sub" id="feed-sub"></div>
+    </div>
+    <div id="feed"></div>
+  </main>
+</div>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -332,9 +353,12 @@ let openId = null;
 // which would otherwise relocate it to the read pile under your cursor.
 let openWasRead = false;
 let pileOpen = false;
+const expandedClusters = new Set();   // lead story ids showing full coverage
 let refreshing = false;
 
-const tabsEl = document.getElementById("tabs");
+const sideEl = document.getElementById("side");
+const feedTitleEl = document.getElementById("feed-title");
+const feedSubEl = document.getElementById("feed-sub");
 const feedEl = document.getElementById("feed");
 const stampEl = document.getElementById("stamp");
 const feedNoteEl = document.getElementById("feed-note");
@@ -355,6 +379,8 @@ const pullEl = document.getElementById("pull");
 
 const BOOKMARK_OUTLINE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.56V48H184Z"></path></svg>';
 const BOOKMARK_FILL = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Z"></path></svg>';
+const NEWS_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M88,112a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H96A8,8,0,0,1,88,112Zm8,40h80a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM232,64V184a24,24,0,0,1-24,24H32A24,24,0,0,1,8,184.11V88a8,8,0,0,1,16,0v96a8,8,0,0,0,16,0V64A16,16,0,0,1,56,48H216A16,16,0,0,1,232,64Zm-16,0H56V184a23.84,23.84,0,0,1-1.37,8H208a8,8,0,0,0,8-8Z"></path></svg>';
+const STACK_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M230.91,172A8,8,0,0,1,228,182.91l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,36,169.09l92,53.65,92-53.65A8,8,0,0,1,230.91,172ZM220,121.09l-92,53.65L36,121.09A8,8,0,0,0,28,134.91l96,56a8,8,0,0,0,8.06,0l96-56A8,8,0,1,0,220,121.09ZM24,80a8,8,0,0,1,4-6.91l96-56a8,8,0,0,1,8.06,0l96,56a8,8,0,0,1,0,13.82l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,24,80Zm23.88,0L128,126.74,208.12,80,128,33.26Z"></path></svg>';
 const INFO_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm12-88a12,12,0,0,1-24,0V88a12,12,0,0,1,24,0Zm-12,44a12,12,0,1,1,12-12A12,12,0,0,1,128,172Z"></path></svg>';
 
 function esc(s) {
@@ -377,33 +403,49 @@ function unreadCount(bucketId) {
     (bucketId === "all" || s.bucket === bucketId) && !s.is_read && !s.dismissed).length;
 }
 
-function renderTabs() {
-  tabsEl.innerHTML = "";
-  BUCKETS.forEach((b) => {
-    const n = unreadCount(b.id);
-    const btn = document.createElement("button");
-    btn.className = "tab" + (b.id === activeBucket ? " active" : "");
-    btn.innerHTML = `${esc(b.label)}${n > 0 ? `<span class="count">${n}</span>` : ""}<span class="mark"></span>`;
-    btn.addEventListener("click", () => {
-      activeBucket = b.id;
-      openId = null;
-      renderTabs();
-      renderFeed();
-    });
-    tabsEl.appendChild(btn);
-  });
+const BEAT_COLORS = {
+  hpe: "#86efac", cisco: "#7dd3fc", arista: "#fdba74", silicon: "#c4b5fd",
+  ai_industry: "#fcd34d", space: "#67e8f9", standards: "#fda4af",
+};
 
-  // Saved sits at the right end, past a gap: it's a view, not a beat.
-  const saved = document.createElement("button");
-  saved.className = "tab tab-saved" + (activeBucket === "saved" ? " active" : "");
-  saved.innerHTML = `${BOOKMARK_OUTLINE}<span>Saved</span><span class="mark"></span>`;
-  saved.addEventListener("click", () => {
-    activeBucket = "saved";
+function navItem(id, inner, active) {
+  const btn = document.createElement("button");
+  btn.className = "nav-item" + (active ? " active" : "");
+  btn.innerHTML = inner;
+  btn.addEventListener("click", () => {
+    activeBucket = id;
     openId = null;
-    renderTabs();
+    renderNav();
     renderFeed();
+    window.scrollTo({ top: 0 });
   });
-  tabsEl.appendChild(saved);
+  return btn;
+}
+
+function renderNav() {
+  sideEl.innerHTML = "";
+  const count = (id) => {
+    const n = unreadCount(id);
+    return n > 0 ? `<span class="count">${n}</span>` : "";
+  };
+  const sep = () => Object.assign(document.createElement("div"), { className: "nav-sep" });
+
+  sideEl.appendChild(navItem("all", `${NEWS_ICON}<span>Top stories</span>${count("all")}`, activeBucket === "all"));
+  sideEl.appendChild(sep());
+  BUCKETS.filter((b) => b.id !== "all").forEach((b) => {
+    sideEl.appendChild(navItem(b.id,
+      `<span class="nav-swatch" style="background:${BEAT_COLORS[b.id]}"></span><span>${esc(b.label)}</span>${count(b.id)}`,
+      activeBucket === b.id));
+  });
+  sideEl.appendChild(sep());
+  sideEl.appendChild(navItem("saved", `${BOOKMARK_OUTLINE}<span>Saved</span>`, activeBucket === "saved"));
+}
+
+function renderHead() {
+  feedTitleEl.textContent = activeBucket === "all" ? "Top stories"
+    : activeBucket === "saved" ? "Saved"
+    : FULL_NAMES[activeBucket];
+  feedSubEl.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 }
 
 function relativeDay(dateStr) {
@@ -430,35 +472,85 @@ function formatDay(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }
 
-function cardMarkup(s) {
-  return `
-    <div class="card-meta">
-      <span class="dot ${s.is_read ? "read" : ""}"></span>
+// Publisher chip: first letter on a color derived from the name, so each
+// outlet keeps the same color everywhere.
+function avatarFor(source) {
+  const name = String(source || "?").replace(/^the\s+/i, "");
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `<span class="avatar" style="background:hsl(${h} 55% 74%)">${esc(name[0].toUpperCase())}</span>`;
+}
+
+// ---------------------------------------------------------------------------
+// Full coverage: stories from different outlets about one event share most of
+// their distinctive headline words. Mirrors sameStory() in api/refresh.js.
+// ---------------------------------------------------------------------------
+const STOP = new Set(("a an the and or of for to in on at by with from as is are was were be been " +
+  "its it this that these those new news says said report reports will can could may " +
+  "into onto over under after about than their they them what when where which while have has " +
+  "data center centers centre network networks networking").split(" "));
+
+function headlineTerms(title) {
+  return [...new Set(String(title || "").toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !STOP.has(w))
+    .map((w) => w.replace(/(es|s)$/, "")))];
+}
+
+function sameEvent(a, b) {
+  const B = new Set(b);
+  const shared = a.filter((t) => B.has(t)).length;
+  const ratio = shared / Math.min(a.length, b.length);
+  return (shared >= 3 && ratio >= 0.5) || (shared >= 2 && ratio >= 0.75);
+}
+
+// Input is newest-first, so each cluster's first story is its newest.
+function clusterStories(list) {
+  const clusters = [];
+  for (const s of list) {
+    const terms = headlineTerms(s.headline);
+    const home = clusters.find((c) => c.terms.some((t) => sameEvent(terms, t)));
+    if (home) {
+      home.items.push(s);
+      home.terms.push(terms);
+    } else {
+      clusters.push({ items: [s], terms: [terms] });
+    }
+  }
+  return clusters;
+}
+
+function storyEl(s, { lead = false, showBeat = false } = {}) {
+  const el = document.createElement("div");
+  const isOpen = openId === s.id;
+  el.className = "story" + (lead ? " lead" : "") + (isOpen ? " open" : "")
+    + (s.is_read && !isOpen ? " read" : "") + (s.dismissed ? " dismissed" : "");
+  el.dataset.storyId = s.id;
+  const beat = BUCKETS.find((b) => b.id === s.bucket);
+  el.innerHTML = `
+    <div class="src-line">
+      ${avatarFor(s.source)}
+      <span class="src-name">${esc(s.source)}</span>
+      <span class="when">· ${relativeDay(dayOf(s))}</span>
+      ${s.is_read ? "" : '<span class="dot" title="Unread"></span>'}
       <span class="kicker" data-tag="${esc(s.tag)}">${esc(s.tag)}</span>
-      <span class="when">${relativeDay(dayOf(s))}</span>
-      <button class="save-btn js-save ${s.saved ? "on" : ""}" aria-pressed="${s.saved ? "true" : "false"}" aria-label="${s.saved ? "Remove from saved" : "Save article"}" title="${s.saved ? "Remove from saved" : "Save"}">${s.saved ? BOOKMARK_FILL : BOOKMARK_OUTLINE}</button>
+      ${s.is_blog ? '<span class="badge">Blog post</span>' : ""}
+      ${s.is_manual ? '<span class="badge">Added by you</span>' : ""}
+      <span class="trail">
+        ${showBeat && beat ? `<span class="beat-pill" style="--beat:${BEAT_COLORS[s.bucket]}">${esc(beat.label)}</span>` : ""}
+        <button class="save-btn js-save ${s.saved ? "on" : ""}" aria-pressed="${s.saved ? "true" : "false"}" aria-label="${s.saved ? "Remove from saved" : "Save article"}" title="${s.saved ? "Remove from saved" : "Save"}">${s.saved ? BOOKMARK_FILL : BOOKMARK_OUTLINE}</button>
+      </span>
     </div>
-    <h3 class="card-title">${esc(s.headline)}</h3>
-    <p class="card-teaser">${esc(s.teaser)}</p>
-    <div class="card-body">
+    <h3 class="story-title">${esc(s.headline)}</h3>
+    ${lead && s.teaser && s.teaser !== s.headline ? `<p class="lead-teaser">${esc(s.teaser)}</p>` : ""}
+    <div class="story-body">
       <p class="summary ${s.summary ? "" : "pending"}">${s.summary ? esc(s.summary) : "Writing summary…"}</p>
       <div class="actions">
         <a class="link" href="${esc(s.url)}" target="_blank" rel="noopener">Read source →</a>
         <button class="text-btn js-dismiss">${s.dismissed ? "Undo not relevant" : "Not relevant"}</button>
       </div>
-    </div>
-    <div class="card-source">
-      <span>${esc(s.source)}</span>
-      ${s.is_blog ? '<span class="badge">Blog post</span>' : ""}
-      ${s.is_manual ? '<span class="badge">Added by you</span>' : ""}
     </div>`;
-}
-
-function buildCard(s) {
-  const el = document.createElement("article");
-  el.className = "card" + (openId === s.id ? " open" : "") + (s.dismissed ? " dismissed" : "");
-  el.dataset.storyId = s.id;
-  el.innerHTML = cardMarkup(s);
 
   el.querySelector(".js-dismiss").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -471,7 +563,7 @@ function buildCard(s) {
   });
 
   el.addEventListener("click", (e) => {
-    if (e.target.closest("a, button")) return;
+    if (e.target.closest("a, button, .story-body")) return;
     const opening = openId !== s.id;
     if (opening) openWasRead = s.is_read;
     openId = opening ? s.id : null;
@@ -487,7 +579,38 @@ function buildCard(s) {
   return el;
 }
 
-// Saved is its own view: no day grouping, no read pile, ordered by when you
+const RELATED_SHOWN = 3;
+
+function clusterEl(cluster, { showBeat = false, faded = false } = {}) {
+  const [lead, ...rest] = cluster.items;
+  const el = document.createElement("article");
+  el.className = "cluster" + (faded ? " faded" : "");
+  el.appendChild(storyEl(lead, { lead: true, showBeat }));
+
+  const expanded = expandedClusters.has(lead.id);
+  rest.forEach((s, i) => {
+    // An open story stays visible even when coverage is collapsed.
+    if (expanded || i < RELATED_SHOWN || s.id === openId) el.appendChild(storyEl(s));
+  });
+
+  if (rest.length > RELATED_SHOWN) {
+    const outlets = new Set(cluster.items.map((s) => s.source)).size;
+    const btn = document.createElement("button");
+    btn.className = "coverage";
+    btn.innerHTML = expanded
+      ? `${STACK_ICON}<span>Show less</span>`
+      : `${STACK_ICON}<span>Full coverage · ${cluster.items.length} stories from ${outlets} outlets</span>`;
+    btn.addEventListener("click", () => {
+      if (expanded) expandedClusters.delete(lead.id);
+      else expandedClusters.add(lead.id);
+      renderFeed();
+    });
+    el.appendChild(btn);
+  }
+  return el;
+}
+
+// Saved is its own view: no grouping, no read pile, ordered by when you
 // saved it rather than when it was published.
 function renderSaved() {
   const list = stories
@@ -495,6 +618,7 @@ function renderSaved() {
     .sort((a, b) => String(b.saved_at || "").localeCompare(String(a.saved_at || "")));
 
   feedNoteEl.textContent = `${list.length} saved`;
+  feedSubEl.textContent = `${list.length} saved, newest save first`;
   feedEl.innerHTML = "";
 
   if (!list.length) {
@@ -502,28 +626,25 @@ function renderSaved() {
     return;
   }
 
-  const grid = document.createElement("div");
-  grid.className = "grid";
-  list.forEach((s) => {
-    const el = buildCard(s);
-    if (s.is_read) el.classList.add("was-read");
-    grid.appendChild(el);
-  });
-  feedEl.appendChild(grid);
+  list.forEach((s) => feedEl.appendChild(clusterEl({ items: [s] }, { showBeat: true, faded: s.is_read })));
 }
 
 function renderFeed() {
+  renderHead();
   if (activeBucket === "saved") return renderSaved();
 
   let list = stories.filter((s) => activeBucket === "all" || s.bucket === activeBucket);
   if (activeTag !== "all") list = list.filter((s) => s.tag === activeTag);
 
   const pinnedUp = (s) => s.id === openId && !openWasRead;
-  const unread = list.filter((s) => !s.is_read || pinnedUp(s));
-  const read = list.filter((s) => s.is_read && !pinnedUp(s));
+  const clusters = clusterStories(list);
+  const fresh = clusters.filter((c) => c.items.some((s) => !s.is_read || pinnedUp(s)));
+  const read = clusters.filter((c) => !fresh.includes(c));
 
-  feedNoteEl.textContent = `${list.filter((s) => !s.is_read).length} unread · ${list.filter((s) => s.is_read).length} read`
+  const unreadN = list.filter((s) => !s.is_read).length;
+  feedNoteEl.textContent = `${unreadN} unread · ${list.length - unreadN} read`
     + (activeBucket === "all" ? "" : ` · ${FULL_NAMES[activeBucket]}`);
+  feedSubEl.textContent += unreadN ? ` · ${unreadN} unread` : " · all caught up";
 
   feedEl.innerHTML = "";
 
@@ -532,27 +653,8 @@ function renderFeed() {
     return;
   }
 
-  const groups = new Map();
-  unread.forEach((s) => {
-    const k = dayOf(s);
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(s);
-  });
-
-  [...groups.entries()]
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .forEach(([day, items]) => {
-      const block = document.createElement("div");
-      block.className = "day-block";
-      const label = document.createElement("div");
-      label.className = "day";
-      label.textContent = formatDay(day);
-      const grid = document.createElement("div");
-      grid.className = "grid";
-      items.forEach((s) => grid.appendChild(buildCard(s)));
-      block.append(label, grid);
-      feedEl.appendChild(block);
-    });
+  const showBeat = activeBucket === "all";
+  fresh.forEach((c) => feedEl.appendChild(clusterEl(c, { showBeat })));
 
   if (read.length) {
     const pile = document.createElement("div");
@@ -560,36 +662,14 @@ function renderFeed() {
     const toggle = document.createElement("button");
     toggle.className = "pile-toggle";
     toggle.textContent = `${pileOpen ? "▾" : "▸"} Already read (${read.length})`;
-    const grid = document.createElement("div");
-    grid.className = "pile-grid" + (pileOpen ? " open" : "");
-
-    read
-      .sort((a, b) => (dayOf(a) < dayOf(b) ? 1 : -1))
-      .forEach((s) => {
-        if (openId === s.id) {
-          grid.appendChild(buildCard(s));
-          return;
-        }
-        const el = document.createElement("div");
-        el.className = "pile-card";
-        el.innerHTML = `
-          <div class="pile-meta">${esc(s.source)} · ${relativeDay(dayOf(s))}</div>
-          <div class="pile-title">${esc(s.headline)}</div>`;
-        el.addEventListener("click", () => {
-          openId = s.id;
-          openWasRead = true;
-          renderFeed();
-          if (!s.summary) ensureSummary(s);
-        });
-        grid.appendChild(el);
-      });
-
     toggle.addEventListener("click", () => {
       pileOpen = !pileOpen;
       renderFeed();
     });
-
-    pile.append(toggle, grid);
+    pile.appendChild(toggle);
+    if (pileOpen || read.some((c) => c.items.some((s) => s.id === openId))) {
+      read.forEach((c) => pile.appendChild(clusterEl(c, { showBeat, faded: true })));
+    }
     feedEl.appendChild(pile);
   }
 }
@@ -612,7 +692,7 @@ async function ensureSummary(story) {
 
 async function markRead(story) {
   story.is_read = true;
-  renderTabs();
+  renderNav();
   const { error } = await supabase.rpc("mark_story_read", { story_id: story.id });
   if (error) console.error("Failed to mark read:", error);
 }
@@ -624,14 +704,14 @@ async function toggleSaved(story) {
   // Unsaving from the Saved view removes the card outright, so don't leave an
   // open body pointing at a story that's no longer rendered.
   if (!next && activeBucket === "saved" && openId === story.id) openId = null;
-  renderTabs();
+  renderNav();
   renderFeed();
 
   const { error } = await supabase.rpc("set_story_saved", { story_id: story.id, value: next });
   if (error) {
     console.error("Failed to save:", error);
     story.saved = !next;
-    renderTabs();
+    renderNav();
     renderFeed();
   }
 }
@@ -639,7 +719,7 @@ async function toggleSaved(story) {
 async function toggleDismissed(story) {
   const next = !story.dismissed;
   story.dismissed = next;
-  renderTabs();
+  renderNav();
   renderFeed();
   try {
     const res = await fetch("/api/feedback", {
@@ -651,7 +731,7 @@ async function toggleDismissed(story) {
   } catch (err) {
     console.error(err);
     story.dismissed = !next;
-    renderTabs();
+    renderNav();
     renderFeed();
   }
 }
@@ -670,7 +750,7 @@ async function loadStories() {
   }
 
   stories = data || [];
-  renderTabs();
+  renderNav();
   renderFeed();
 
   const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
