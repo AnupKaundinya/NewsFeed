@@ -2,313 +2,397 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>NewsFeed</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
-  /* Nocturne tokens */
+  /* Reader tokens */
   :root{
-    --color-bg:#161826;
-    --color-surface:#232532;
-    --color-text:#e4e7f5;
-    --color-accent:#9184d9;
-    --color-divider:color-mix(in srgb, #e9e9ed 16%, transparent);
+    --bg:#EEF0F3;
+    --surface:#FFFFFF;
+    --surface-2:#F7F8FA;
+    --text:#1A1D23;
+    --text-2:#2A2E36;
+    --text-3:#3A3F49;
+    --muted:#5C626E;
+    --border:#DDE0E5;
+    --border-soft:#E6E8EC;
+    --control:#CDD1D8;
+    --accent:#2457C5;
+    --accent-soft:#EEF3FD;
+    --on-accent:#FFFFFF;
+    --chip-on:#1A1D23;
+    --on-chip-on:#FFFFFF;
 
-    --color-neutral-300:#cfd3e5;
-    --color-neutral-400:#b2b6ca;
-    --color-neutral-500:#9397ab;
-    --color-neutral-600:#75798c;
-    --color-neutral-700:#595d6c;
-    --color-neutral-800:#3f424d;
-    --color-neutral-900:#292b31;
-
-    --color-accent-300:#d2cefd;
-    --color-accent-400:#b5abfc;
-    --color-accent-700:#5d5294;
-
-    --font-heading:"Inter", system-ui, sans-serif;
-    --font-body:"Inter", system-ui, sans-serif;
-
-    --radius-sm:4px;
-    --radius-md:8px;
-
-    --shadow-sm:0 0 0 1px #3f424d;
-    --shadow-md:0 0 0 1px #595d6c, 0 6px 18px rgba(0,0,0,.55);
+    --font-ui:"Instrument Sans", system-ui, sans-serif;
+    --font-read:"Source Serif 4", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0F1115;
+      --surface:#171A20;
+      --surface-2:#1C2027;
+      --text:#E6E8EC;
+      --text-2:#CDD1D8;
+      --text-3:#B9BEC7;
+      --muted:#9AA0AB;
+      --border:#2A2E36;
+      --border-soft:#23272E;
+      --control:#363B46;
+      --accent:#7FA6FF;
+      --accent-soft:#1B2436;
+      --on-accent:#0F1115;
+      --chip-on:#E6E8EC;
+      --on-chip-on:#0F1115;
+    }
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
-  body{min-height:100vh;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
-  ::selection{background:color-mix(in srgb, var(--color-accent) 32%, transparent);}
-  h1,h2,h3{font-family:var(--font-heading);font-weight:500;margin:0;}
-  a{color:var(--color-accent-300);text-underline-offset:3px;}
-  a:hover{color:var(--color-accent-400);}
-  button{font-family:var(--font-body);}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);}
+  body{font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  ::selection{background:color-mix(in srgb, var(--accent) 28%, transparent);}
+  h1,h2,h3{margin:0;}
+  a{color:var(--accent);}
+  button,input,select{font:inherit;color:inherit;}
+  button{cursor:pointer;}
   :focus{outline:none;}
-  :focus-visible{outline:2px solid var(--color-accent);outline-offset:2px;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  svg{display:block;flex:none;}
 
-  /* ---------- sticky chrome ---------- */
-  .chrome{position:sticky;top:0;z-index:20;background:var(--color-bg);}
-  .bar{display:flex;align-items:center;gap:14px;padding:16px 32px 4px;}
-  .brand{font-family:var(--font-heading);font-weight:500;font-size:15px;letter-spacing:.01em;margin-right:auto;}
-  .stamp{font-size:12px;color:var(--color-neutral-600);white-space:nowrap;}
-
-  .menu-btn{
-    background:transparent;border:1px solid var(--color-divider);color:var(--color-neutral-400);
-    font-family:var(--font-heading);font-weight:500;font-size:12.5px;
-    padding:7px 13px;border-radius:var(--radius-sm);cursor:pointer;flex:none;
-    display:flex;align-items:center;gap:7px;transition:border-color .18s ease,color .18s ease;
+  /* ---------- shared controls ---------- */
+  .icon-btn{
+    width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;flex:none;
+    border:1px solid var(--control);border-radius:9px;background:var(--surface);color:var(--text);
   }
-  .menu-btn:hover{border-color:var(--color-accent);color:var(--color-accent-300);}
-  .menu-btn[aria-expanded="true"]{border-color:var(--color-accent);color:var(--color-accent-300);}
-  .menu-dot{width:6px;height:6px;border-radius:6px;background:var(--color-accent);display:none;}
-  .menu-dot.show{display:block;}
-
-  .refresh-btn{
-    background:transparent;border:1px solid var(--color-accent);color:var(--color-accent-300);
-    font-family:var(--font-heading);font-weight:500;font-size:12.5px;
-    padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;flex:none;
-    display:flex;align-items:center;gap:7px;transition:background .18s ease;
-  }
-  .refresh-btn:hover{background:color-mix(in srgb, var(--color-accent) 14%, transparent);}
-  .refresh-btn:active{border-color:var(--color-accent-400);}
-  .refresh-btn:disabled{opacity:.45;cursor:default;}
-  .spin{
-    width:11px;height:11px;border-radius:50%;flex:none;
-    border:1.5px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
-    border-top-color:var(--color-accent-300);
-    animation:spin .7s linear infinite;display:none;
-  }
-  .refresh-btn.loading .spin{display:block;}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .icon-btn:disabled{opacity:.5;cursor:default;}
+  .icon-btn svg{width:16px;height:16px;}
+  .js-refresh.loading svg{animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  .rule{height:1px;background:linear-gradient(90deg,transparent 0,var(--color-divider) 48px,var(--color-divider) calc(100% - 48px),transparent 100%);}
-
-  .progress{height:3px;background:transparent;overflow:hidden;transition:background .2s ease;}
-  .progress.active{background:var(--color-neutral-900);}
-  .progress .fill{
-    height:100%;width:0;background:var(--color-accent);transition:width .3s ease;
-    box-shadow:0 0 8px color-mix(in srgb, var(--color-accent) 70%, transparent);
+  .search{
+    display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;
+    border:1px solid var(--control);border-radius:9px;background:var(--surface);color:var(--muted);
   }
+  .search:focus-within{border-color:var(--accent);}
+  .search svg{width:14px;height:14px;}
+  .search input{flex:1;min-width:0;border:0;background:transparent;font-size:13.5px;color:var(--text);outline:none;}
+  .search input::placeholder{color:var(--muted);}
 
-  /* ---------- menu ---------- */
-  .menu{
-    display:none;padding:20px 32px 24px;border-bottom:1px solid var(--color-divider);
-    background:var(--color-bg);
+  .swatch{width:8px;height:8px;border-radius:8px;flex:none;}
+  .unread-dot{width:7px;height:7px;border-radius:7px;background:var(--accent);flex:none;}
+
+  .chip{
+    flex:none;display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;
+    border-radius:999px;border:1px solid var(--control);background:var(--surface);
+    font-size:12.5px;font-weight:500;color:var(--text-3);white-space:nowrap;
   }
-  .menu.open{display:block;}
-  .menu-grid{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;}
-  .menu-block{display:flex;flex-direction:column;gap:8px;min-width:260px;flex:1;}
-  .menu-label{font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600);}
-  .input,.select{
-    width:100%;min-height:34px;padding:7px 10px;font:inherit;font-size:13.5px;
-    color:var(--color-text);background:var(--color-surface);caret-color:var(--color-accent);
-    border:1px solid var(--color-divider);border-radius:var(--radius-sm);
+  .chip:hover{border-color:var(--text-3);}
+  .chip.on{background:var(--chip-on);border-color:var(--chip-on);color:var(--on-chip-on);}
+  .chip .count{font-size:12px;opacity:.75;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;
+    border-radius:9px;border:1px solid var(--control);background:var(--surface);color:var(--text);
+    font-weight:500;text-decoration:none;white-space:nowrap;
   }
-  .input:hover,.select:hover{border-color:var(--color-neutral-700);}
-  .input:focus-visible,.select:focus-visible{border-color:var(--color-accent);outline-offset:0;}
-  .input::placeholder{color:var(--color-neutral-600);}
-  .row{display:flex;gap:8px;}
-  .ghost-btn{
-    background:transparent;border:1px solid var(--color-divider);color:var(--color-neutral-300);
-    font-family:var(--font-heading);font-weight:500;font-size:12.5px;
-    padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;
-    transition:border-color .18s ease,color .18s ease;
-  }
-  .ghost-btn:hover{border-color:var(--color-accent);color:var(--color-accent-300);}
-  .ghost-btn:disabled{opacity:.45;cursor:default;}
-  .note{font-size:11.5px;line-height:1.5;color:var(--color-neutral-600);}
-  .note.err{color:var(--color-accent-300);}
+  .btn:hover{border-color:var(--text-3);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn svg{width:16px;height:16px;}
+  .btn.saved{color:var(--accent);border-color:var(--accent);}
 
-  /* ---------- layout: sidebar + feed ---------- */
-  .layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;max-width:1160px;margin:0 auto;padding:28px 32px 110px;}
-  .side{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px;}
-  .nav-item{
-    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-    background:transparent;border:0;border-radius:999px;cursor:pointer;
-    font-family:var(--font-heading);font-weight:500;font-size:14px;
-    color:var(--color-neutral-400);padding:9px 16px;transition:background .18s ease,color .18s ease;
-  }
-  .nav-item:hover{background:color-mix(in srgb, var(--color-neutral-700) 35%, transparent);color:var(--color-text);}
-  .nav-item.active{background:color-mix(in srgb, var(--color-accent) 20%, transparent);color:var(--color-accent-300);}
-  .nav-item svg{width:16px;height:16px;flex:none;display:block;}
-  .nav-swatch{width:9px;height:9px;border-radius:3px;flex:none;margin:0 3.5px;}
-  .nav-item .count{margin-left:auto;font-size:12px;color:var(--color-neutral-500);}
-  .nav-item.active .count{color:var(--color-accent-300);}
-  .nav-sep{height:1px;background:var(--color-divider);margin:10px 16px;}
+  .label{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
 
-  .feed-head{margin:0 0 22px;}
-  .feed-title{font-size:24px;letter-spacing:-.02em;}
-  .feed-sub{font-size:13px;color:var(--color-neutral-600);margin-top:4px;}
-
-  /* ---------- story clusters ---------- */
-  .cluster{
-    background:var(--color-surface);border-radius:var(--radius-md);padding:20px 22px;margin-bottom:16px;
-    box-shadow:var(--shadow-sm);transition:box-shadow .18s ease;
-  }
-  .cluster:hover{box-shadow:var(--shadow-md);}
-  .cluster.faded{opacity:.72;}
-  .cluster.faded:hover{opacity:1;}
-
-  .story{cursor:pointer;}
-  .story + .story{border-top:1px solid var(--color-divider);margin-top:14px;padding-top:14px;}
-  .src-line{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--color-neutral-400);min-width:0;}
-  .avatar{
-    width:18px;height:18px;border-radius:4px;flex:none;display:inline-flex;align-items:center;justify-content:center;
-    font-size:10.5px;font-weight:600;color:#161826;
-  }
-  .src-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22em;}
-  .when{color:var(--color-neutral-600);white-space:nowrap;}
-  .dot{width:6px;height:6px;border-radius:6px;background:var(--color-accent);flex:none;}
-  .trail{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
-  .beat-pill{font-size:11px;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb, var(--beat) 16%, transparent);color:var(--beat);}
-
-  .kicker{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--color-accent-300);white-space:nowrap;}
-  .kicker[data-tag="Product Launch"]{color:#7dd3fc;}
-  .kicker[data-tag="Earnings"]{color:#86efac;}
-  .kicker[data-tag="Partnership"]{color:#fcd34d;}
-  .kicker[data-tag="AI Fabric"]{color:#c4b5fd;}
-  .kicker[data-tag="Executive Move"]{color:#fda4af;}
-  .kicker[data-tag="Industry Standard"]{color:#67e8f9;}
-  .kicker[data-tag="Other"]{display:none;}
-  .badge{color:var(--color-accent-300);font-style:italic;white-space:nowrap;}
-
-  .story-title{font-family:var(--font-heading);font-weight:500;font-size:15.5px;line-height:1.32;letter-spacing:-.008em;margin:7px 0 0;}
-  .story.lead .story-title{font-size:20px;line-height:1.25;letter-spacing:-.014em;}
-  .story:hover .story-title{color:var(--color-accent-300);}
-  .lead-teaser{font-size:14px;line-height:1.5;margin:8px 0 0;color:var(--color-neutral-500);}
-  .story.read .story-title{color:var(--color-neutral-500);}
-  .story.dismissed{opacity:.4;}
-  .story.dismissed .story-title{text-decoration:line-through;text-decoration-thickness:1px;}
-
-  .save-btn{
-    background:transparent;border:0;padding:0;cursor:pointer;flex:none;
-    color:var(--color-neutral-600);display:flex;align-items:center;transition:color .18s ease;
-  }
-  .save-btn svg{width:16px;height:16px;display:block;}
-  .save-btn:hover{color:var(--color-accent-300);}
-  .save-btn.on{color:var(--color-accent);}
-
-  .story-body{display:none;padding-top:14px;margin-top:14px;border-top:1px solid var(--color-divider);animation:fade .22s ease;cursor:default;}
-  .story.open .story-body{display:block;}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
-  .summary{font-size:14px;line-height:1.65;margin:0 0 16px;color:var(--color-neutral-300);max-width:62em;}
-  .summary.pending{color:var(--color-neutral-600);font-style:italic;}
-  .summary.pending::before{
-    content:"";display:inline-block;width:9px;height:9px;margin-right:8px;vertical-align:-1px;
-    border-radius:50%;border:1.5px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
-    border-top-color:var(--color-accent-300);animation:spin .7s linear infinite;
-  }
-  .actions{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
-  .link{font-family:var(--font-heading);font-weight:500;font-size:12.5px;text-decoration:none;}
-  .text-btn{background:transparent;border:0;padding:0;font-size:12.5px;color:var(--color-neutral-600);cursor:pointer;transition:color .18s ease;}
-  .text-btn:hover{color:var(--color-accent-300);}
-
-  .coverage{
-    display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:7px 14px;
-    background:transparent;border:1px solid var(--color-divider);border-radius:999px;cursor:pointer;
-    font-family:var(--font-heading);font-weight:500;font-size:12.5px;color:var(--color-accent-300);
-    transition:border-color .18s ease;
-  }
-  .coverage:hover{border-color:var(--color-accent);}
-  .coverage svg{width:14px;height:14px;display:block;}
-
-  /* ---------- read pile ---------- */
-  .pile{border-top:1px solid var(--color-divider);padding-top:24px;margin-top:28px;}
-  .pile-toggle{background:transparent;border:0;padding:0;margin-bottom:16px;font-family:var(--font-heading);font-weight:500;font-size:12.5px;color:var(--color-neutral-500);cursor:pointer;transition:color .18s ease;}
-  .pile-toggle:hover{color:var(--color-accent-300);}
-
-  .empty{padding:60px 0;color:var(--color-neutral-600);font-size:14px;max-width:34em;display:flex;gap:14px;align-items:flex-start;}
-  .empty svg{width:22px;height:22px;flex:none;margin-top:2px;color:var(--color-neutral-700);}
-
-  /* pull-to-refresh indicator */
-  .pull{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:30;}
+  /* ---------- progress + pull ---------- */
+  .progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:50;pointer-events:none;}
+  .progress .fill{height:100%;width:0;background:var(--accent);transition:width .3s ease,opacity .4s ease;opacity:0;}
+  .progress.active .fill{opacity:1;}
+  .pull{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:40;}
   .pull span{
-    font-size:11.5px;color:var(--color-accent-300);background:var(--color-surface);
-    border:1px solid var(--color-divider);border-top:0;
-    border-radius:0 0 var(--radius-md) var(--radius-md);
-    padding:5px 14px;transform:translateY(-100%);transition:transform .2s ease;
+    font-size:12px;color:var(--accent);background:var(--surface);border:1px solid var(--border);border-top:0;
+    border-radius:0 0 10px 10px;padding:5px 14px;transform:translateY(-100%);transition:transform .2s ease;
   }
   .pull.show span{transform:translateY(0);}
 
-  @media (max-width:820px){
-    .bar{padding:14px 18px 4px;}
-    .menu{padding:18px;}
-    .stamp{display:none;}
-    .layout{grid-template-columns:minmax(0,1fr);gap:18px;padding:16px 18px 90px;}
-    .side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none;}
-    .side::-webkit-scrollbar{display:none;}
-    .nav-item{width:auto;flex:none;padding:7px 14px;font-size:13px;border:1px solid var(--color-divider);}
-    .nav-item.active{border-color:transparent;}
-    .nav-item .count{margin-left:2px;}
-    .nav-sep{display:none;}
-    .feed-title{font-size:20px;}
-    .cluster{padding:16px;}
-    .story.lead .story-title{font-size:18px;}
-    .src-name{max-width:12em;}
-    .src-line .kicker{display:none;}   /* publisher name wins the narrow line; filter by tag from the menu */
+  /* ---------- desktop: three panes ---------- */
+  .app{display:grid;grid-template-columns:220px minmax(340px,420px) minmax(0,1fr);height:100vh;height:100dvh;}
+  .rail,.list,.reader{min-height:0;overflow-y:auto;}
+
+  .rail{display:flex;flex-direction:column;gap:2px;padding:20px 12px;}
+  .rail-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 10px;margin-bottom:14px;}
+  .brand{font-weight:600;font-size:16px;letter-spacing:-.01em;}
+  .rail .search{margin:0 0 10px;}
+  .beat{
+    display:flex;align-items:center;gap:10px;width:100%;min-height:38px;padding:0 10px;text-align:left;
+    border:0;border-radius:8px;background:transparent;font-weight:500;color:var(--text-3);
+  }
+  .beat:hover{background:color-mix(in srgb, var(--surface) 60%, transparent);color:var(--text);}
+  .beat.on{background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--border);}
+  .beat .beat-label{flex:1;}
+  .beat .count{font-size:12px;color:var(--muted);}
+  .beat svg{width:14px;height:14px;margin:0 -3px;}
+  .rail-sep{height:1px;background:var(--border);margin:8px 10px;}
+  .add-btn{
+    margin-top:12px;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;text-align:left;
+    border:1px dashed var(--control);border-radius:8px;background:transparent;font-weight:500;color:var(--text-3);
+  }
+  .add-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .add-btn svg{width:14px;height:14px;}
+  .stamp{margin-top:auto;padding:16px 10px 0;font-size:12px;color:var(--muted);}
+
+  .list{background:var(--surface);border-left:1px solid var(--border);border-right:1px solid var(--border);}
+  .list-head{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--border-soft);}
+  .list-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:20px 20px 12px;}
+  .list-title{font-size:18px;font-weight:600;letter-spacing:-.01em;}
+  .list-sub{font-size:12.5px;color:var(--muted);text-align:right;}
+  .head-btns{display:none;gap:8px;}
+  .phone-search{display:none;}
+  .beat-chips{display:none;}
+  .tag-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 12px;}
+  .tag-chips:empty{display:none;}
+
+  .rows{list-style:none;margin:0;padding:0;}
+  .row{border-bottom:1px solid var(--border-soft);}
+  .row-btn{display:block;width:100%;padding:14px 20px;text-align:left;border:0;background:transparent;}
+  .row-btn:hover{background:var(--surface-2);}
+  .row.on .row-btn{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);}
+  .row-meta{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);min-width:0;}
+  .row-src{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .row-time{margin-left:auto;white-space:nowrap;flex:none;}
+  .row-title{display:block;margin-top:6px;font-size:15px;line-height:1.35;font-weight:600;color:var(--text);}
+  .row.read .row-title{font-weight:400;color:var(--muted);}
+  .row.dismissed{opacity:.5;}
+  .row.dismissed .row-title{text-decoration:line-through;text-decoration-thickness:1px;}
+  .row-cov{display:block;margin-top:6px;font-size:12px;font-weight:500;color:var(--accent);}
+  .pile-toggle{
+    display:flex;align-items:center;gap:8px;width:100%;min-height:48px;padding:0 20px;text-align:left;
+    border:0;border-bottom:1px solid var(--border-soft);background:var(--surface-2);
+    font-size:13px;font-weight:500;color:var(--text-3);
+  }
+  .pile-toggle svg{width:12px;height:12px;transition:transform .15s ease;}
+  .pile-toggle[aria-expanded="true"] svg{transform:rotate(90deg);}
+  .empty{padding:48px 24px;color:var(--muted);font-size:14px;line-height:1.6;}
+
+  .reader{padding:40px 48px 64px;}
+  .reader-inner{max-width:640px;}
+  .reader-back{display:none;}
+  .reader-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);}
+  .beat-pill{
+    display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-weight:500;
+    background:color-mix(in srgb, var(--beat) 16%, transparent);color:var(--text);
+  }
+  .beat-pill .swatch{background:var(--beat);width:7px;height:7px;}
+  .badge{font-style:italic;}
+  .reader-title{margin-top:14px;font-family:var(--font-read);font-weight:600;font-size:34px;line-height:1.15;letter-spacing:-.015em;}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+  .next-btn{display:none;}
+  .summary-block{margin-top:32px;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .label-note{font-size:12px;color:var(--muted);}
+  .summary{margin-top:10px;font-family:var(--font-read);font-size:18px;line-height:1.65;color:var(--text-2);}
+  .summary p{margin:0 0 14px;}
+  .summary.pending{font-family:var(--font-ui);font-size:14px;color:var(--muted);font-style:italic;display:flex;align-items:center;gap:10px;}
+  .summary.pending::before{
+    content:"";width:10px;height:10px;border-radius:50%;flex:none;
+    border:1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  .coverage{margin-top:28px;padding-top:24px;border-top:1px solid var(--border);}
+  .cov-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;}
+  .cov-item{
+    display:flex;gap:14px;align-items:baseline;width:100%;padding:10px 12px;text-align:left;
+    border:0;border-radius:8px;background:var(--surface);
+  }
+  .cov-item:hover .cov-title{color:var(--accent);}
+  .cov-item.read .cov-title{color:var(--muted);}
+  .cov-src{flex:none;width:120px;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cov-title{font-size:14px;color:var(--text-2);}
+  .dismiss-link{
+    display:none;margin-top:18px;min-height:44px;padding:0;border:0;background:transparent;
+    font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;
+  }
+  .reader-empty{padding-top:18vh;max-width:28em;color:var(--muted);font-size:15px;line-height:1.6;}
+  .reader-empty strong{display:block;font-family:var(--font-read);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px;}
+
+  .tabbar{display:none;}
+
+  /* ---------- add-a-story dialog ---------- */
+  dialog{
+    width:min(440px, calc(100vw - 32px));padding:0;border:1px solid var(--border);border-radius:14px;
+    background:var(--surface);color:var(--text);box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  dialog::backdrop{background:rgba(15,17,21,.45);}
+  .add-form{display:flex;flex-direction:column;gap:12px;padding:22px;}
+  .add-form h2{font-size:18px;font-weight:600;}
+  .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500;color:var(--text-3);}
+  .input{
+    width:100%;min-height:40px;padding:8px 11px;font-size:14px;color:var(--text);background:var(--surface);
+    border:1px solid var(--control);border-radius:9px;
+  }
+  .input:focus-visible{border-color:var(--accent);outline-offset:0;}
+  .note{font-size:12.5px;line-height:1.5;color:var(--muted);}
+  .note.err{color:#C0362C;}
+  @media (prefers-color-scheme: dark){ .note.err{color:#FF8A80;} }
+  .form-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+
+  /* ---------- phone: list view / story view ---------- */
+  @media (max-width: 899px){
+    html,body{background:var(--surface);}
+    .app{display:block;height:auto;}
+    .rail{display:none;}
+    .rail,.list,.reader{overflow:visible;}
+    .list{border:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));}
+    .list-title-row{flex-direction:column-reverse;align-items:stretch;gap:0;padding:14px 16px 0;position:relative;}
+    .list-title{font-size:24px;letter-spacing:-.015em;}
+    .list-sub{text-align:left;font-size:12px;}
+    .head-btns{display:flex;position:absolute;right:16px;top:14px;}
+    .head-btns .icon-btn{width:44px;height:44px;border-radius:12px;border-color:var(--border);}
+    .head-btns .icon-btn svg{width:18px;height:18px;}
+    .phone-search{margin:12px 16px 0;}
+    .phone-search.open{display:flex;}
+    .beat-chips{display:flex;gap:6px;overflow-x:auto;padding:14px 16px 12px;scrollbar-width:none;}
+    .beat-chips::-webkit-scrollbar{display:none;}
+    .beat-chips .chip{min-height:36px;font-size:13px;}
+    .tag-chips{flex-wrap:nowrap;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;}
+    .tag-chips::-webkit-scrollbar{display:none;}
+    .row-btn{padding:14px 16px;}
+    .row-title{font-size:16px;margin-top:5px;}
+    .row.on .row-btn{background:transparent;box-shadow:none;}
+    .pile-toggle{padding:0 16px;min-height:52px;font-size:14px;}
+
+    .reader{display:none;padding:0 20px calc(96px + env(safe-area-inset-bottom));}
+    body.reading .list{display:none;}
+    body.reading .reader{display:block;}
+    body.reading .tabbar{display:none;}
+    .reader-empty{display:none;}
+    .reader-back{
+      display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5;
+      margin:0 -20px 20px;padding:10px 8px;background:var(--surface);border-bottom:1px solid var(--border-soft);
+    }
+    .back-btn{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;border:0;background:transparent;font-size:15px;font-weight:500;color:var(--accent);}
+    .back-btn svg{width:18px;height:18px;}
+    .reader-pos{padding-right:12px;font-size:12.5px;color:var(--muted);}
+    .reader-meta{font-size:12.5px;}
+    .reader-title{font-size:27px;line-height:1.18;margin-top:12px;}
+    .actions{
+      position:fixed;left:0;right:0;bottom:0;z-index:10;margin:0;flex-wrap:nowrap;
+      padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border-soft);
+    }
+    .actions .btn{min-height:48px;border-radius:12px;}
+    .actions .primary{flex:1;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;}
+    .actions .js-save{width:48px;padding:0;}
+    .actions .js-save .btn-label,.actions .desk-only{display:none;}
+    .next-btn{display:inline-flex;width:48px;padding:0;}
+    .summary-block{margin-top:22px;}
+    .summary{font-size:17px;line-height:1.6;}
+    .cov-item{flex-direction:column;gap:2px;padding:12px 0;border-radius:0;border-bottom:1px solid var(--border-soft);}
+    .cov-list{gap:0;}
+    .cov-src{width:auto;font-size:12.5px;color:var(--text-3);}
+    .cov-title{font-size:15px;line-height:1.4;color:var(--text);}
+    .dismiss-link{display:inline-block;}
+
+    .tabbar{
+      display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));position:fixed;left:0;right:0;bottom:0;z-index:10;
+      padding:6px 8px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border-soft);
+    }
+    .tab{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;
+      border:0;background:transparent;font-size:11.5px;font-weight:500;color:var(--muted);
+    }
+    .tab svg{width:22px;height:22px;}
+    .tab.on{color:var(--accent);font-weight:600;}
   }
 </style>
 </head>
 <body>
 
+<div class="progress" id="progress-track"><div class="fill" id="progress-fill"></div></div>
 <div class="pull" id="pull"><span>Release to refresh</span></div>
 
-<div class="chrome">
-  <div class="bar">
-    <span class="brand">NewsFeed</span>
-    <span class="stamp" id="stamp">—</span>
-    <button class="refresh-btn" id="refresh-btn"><span class="spin"></span><span id="refresh-label">Refresh</span></button>
-    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-label="Filters and add a story">
-      <span>Filters</span><span class="menu-dot" id="menu-dot"></span>
-    </button>
-  </div>
-  <div class="rule"></div>
-  <div class="progress" id="progress-track"><div class="fill" id="progress-fill"></div></div>
-</div>
+<div class="app">
+  <nav class="rail" aria-label="Beats">
+    <div class="rail-top">
+      <span class="brand">NewsFeed</span>
+      <button class="icon-btn js-refresh" aria-label="Refresh" title="Refresh"></button>
+    </div>
+    <label class="search">
+      <span class="js-search-icon"></span>
+      <span class="sr">Search stories</span>
+      <input class="js-search" type="search" placeholder="Search" autocomplete="off">
+    </label>
+    <div id="rail-beats"></div>
+    <button class="add-btn js-add"><span class="js-plus-icon"></span>Add a story it missed</button>
+    <div class="stamp" id="stamp">—</div>
+  </nav>
 
-<div class="menu" id="menu">
-  <div class="menu-grid">
-    <div class="menu-block">
-      <span class="menu-label">Add a story it missed</span>
-      <input class="input" id="submit-url" type="url" placeholder="Paste article URL">
-      <div class="row">
-        <select class="select" id="submit-bucket"></select>
-        <button class="ghost-btn" id="submit-go">Add</button>
+  <section class="list" aria-label="Stories">
+    <header class="list-head">
+      <div class="list-title-row">
+        <h1 class="list-title" id="list-title">Top stories</h1>
+        <div class="list-sub" id="list-sub"></div>
+        <div class="head-btns">
+          <button class="icon-btn" id="search-toggle" aria-label="Search" aria-expanded="false"></button>
+          <button class="icon-btn js-refresh" aria-label="Refresh"></button>
+        </div>
       </div>
-      <input class="input" id="submit-note" type="text" placeholder="Note (optional)">
-      <div class="note" id="submit-status">The source becomes trusted and shapes future picks.</div>
-    </div>
-    <div class="menu-block">
-      <span class="menu-label">Filter by tag</span>
-      <select class="select" id="tag-filter">
-        <option value="all">All tags</option>
-        <option value="Product Launch">Product Launch</option>
-        <option value="Earnings">Earnings</option>
-        <option value="Partnership">Partnership</option>
-        <option value="AI Fabric">AI Fabric</option>
-        <option value="Executive Move">Executive Move</option>
-        <option value="Industry Standard">Industry Standard</option>
-        <option value="Other">Other</option>
-      </select>
-      <div class="note" id="feed-note"></div>
-    </div>
-  </div>
+      <label class="search phone-search" id="phone-search">
+        <span class="js-search-icon"></span>
+        <span class="sr">Search stories</span>
+        <input class="js-search" type="search" placeholder="Search stories" autocomplete="off">
+      </label>
+      <nav class="beat-chips" id="chip-beats" aria-label="Beats"></nav>
+      <div class="tag-chips" id="tag-chips"></div>
+    </header>
+    <div id="feed"></div>
+  </section>
+
+  <article class="reader" id="reader" aria-live="polite"></article>
 </div>
 
-<div class="layout">
-  <nav class="side" id="side" aria-label="Beats"></nav>
-  <main>
-    <div class="feed-head">
-      <h1 class="feed-title" id="feed-title">Top stories</h1>
-      <div class="feed-sub" id="feed-sub"></div>
+<nav class="tabbar" aria-label="Sections">
+  <button class="tab" data-tab="stories"></button>
+  <button class="tab" data-tab="saved"></button>
+  <button class="tab" data-tab="add"></button>
+</nav>
+
+<dialog id="add-dialog" aria-labelledby="add-title">
+  <form class="add-form" method="dialog">
+    <h2 id="add-title">Add a story it missed</h2>
+    <label class="field">Article URL
+      <input class="input" id="submit-url" type="url" placeholder="https://…" autocomplete="off">
+    </label>
+    <label class="field">Beat
+      <select class="input" id="submit-bucket"></select>
+    </label>
+    <label class="field">Note (optional)
+      <input class="input" id="submit-note" type="text">
+    </label>
+    <div class="note" id="submit-status">The source becomes trusted and shapes future picks.</div>
+    <div class="form-btns">
+      <button class="btn" value="cancel">Close</button>
+      <button class="btn primary" type="button" id="submit-go">Add story</button>
     </div>
-    <div id="feed"></div>
-  </main>
-</div>
+  </form>
+</dialog>
+
+<dialog id="key-dialog" aria-labelledby="key-title">
+  <form class="add-form" method="dialog">
+    <h2 id="key-title">Enter your access key</h2>
+    <p class="note">Refreshing, summaries and feedback need the <code>REFRESH_SECRET</code> set in Vercel. It's saved in this browser only.</p>
+    <label class="field">Access key
+      <input class="input" id="key-input" type="password" autocomplete="current-password">
+    </label>
+    <div class="form-btns">
+      <button class="btn" value="cancel">Not now</button>
+      <button class="btn primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -316,8 +400,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ---- PASTE YOUR REAL VALUES HERE ----
 const SUPABASE_URL = "https://lbkvvpikphwzquuavwzf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxia3Z2cGlrcGh3enF1dWF2d3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjIzNTIsImV4cCI6MjEwMzg5ODM1Mn0.yP-WPFUVAXJGaOxqRw6gDmrEjoo2eW4X78E7tvTvDuY";
-const REFRESH_SECRET = "8928eff4ee9582ed787dbe0db1366c4f";
 // --------------------------------------
+// The refresh secret never ships in the page: it's asked for on first use
+// and kept in this browser only.
+const SECRET_KEY = "backbone:refreshSecret";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -342,122 +428,153 @@ const FULL_NAMES = {
   standards: "Networking Standards & Innovations",
 };
 
+const TAGS = ["Product Launch", "Earnings", "Partnership", "AI Fabric", "Executive Move", "Industry Standard"];
+
+// Mid-lightness so the same swatch reads on the light and dark grounds.
+const BEAT_COLORS = {
+  hpe: "#2E9E62", cisco: "#1E88C7", arista: "#D9772B", silicon: "#7C5CD6",
+  ai_industry: "#C99A0E", space: "#1BA3AE", standards: "#D24A6C",
+};
+
 const STALE_HOURS = 20;
 const LAST_REFRESH_KEY = "backbone:lastRefreshAt";   // internal key — name kept so existing timestamps survive
 
 let stories = [];
 let activeBucket = "all";
-let activeTag = "all";
+let activeChip = "all";   // "all", "unread", or a tag
+let query = "";
 let openId = null;
 // Where the open story sat when it was clicked. Opening marks a story read,
 // which would otherwise relocate it to the read pile under your cursor.
 let openWasRead = false;
 let pileOpen = false;
-const expandedClusters = new Set();   // lead story ids showing full coverage
 let refreshing = false;
+let refreshStatus = "";
+let clusters = [];        // last rendered clusters, so the reader can show full coverage
 
-const sideEl = document.getElementById("side");
-const feedTitleEl = document.getElementById("feed-title");
-const feedSubEl = document.getElementById("feed-sub");
+const railBeatsEl = document.getElementById("rail-beats");
+const chipBeatsEl = document.getElementById("chip-beats");
+const tagChipsEl = document.getElementById("tag-chips");
+const listTitleEl = document.getElementById("list-title");
+const listSubEl = document.getElementById("list-sub");
 const feedEl = document.getElementById("feed");
+const readerEl = document.getElementById("reader");
+const listEl = document.querySelector(".list");
 const stampEl = document.getElementById("stamp");
-const feedNoteEl = document.getElementById("feed-note");
-const refreshBtn = document.getElementById("refresh-btn");
-const refreshLabel = document.getElementById("refresh-label");
+const refreshBtns = document.querySelectorAll(".js-refresh");
+const searchInputs = document.querySelectorAll(".js-search");
+const searchToggle = document.getElementById("search-toggle");
+const phoneSearch = document.getElementById("phone-search");
 const progressFill = document.getElementById("progress-fill");
 const progressTrack = document.getElementById("progress-track");
-const menuBtn = document.getElementById("menu-btn");
-const menuDot = document.getElementById("menu-dot");
-const menuEl = document.getElementById("menu");
-const tagFilterEl = document.getElementById("tag-filter");
+const addDialog = document.getElementById("add-dialog");
 const submitUrl = document.getElementById("submit-url");
 const submitBucket = document.getElementById("submit-bucket");
 const submitNote = document.getElementById("submit-note");
 const submitGo = document.getElementById("submit-go");
 const submitStatus = document.getElementById("submit-status");
 const pullEl = document.getElementById("pull");
+const keyDialog = document.getElementById("key-dialog");
+const keyInput = document.getElementById("key-input");
 
-const BOOKMARK_OUTLINE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.56V48H184Z"></path></svg>';
-const BOOKMARK_FILL = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Z"></path></svg>';
-const NEWS_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M88,112a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H96A8,8,0,0,1,88,112Zm8,40h80a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM232,64V184a24,24,0,0,1-24,24H32A24,24,0,0,1,8,184.11V88a8,8,0,0,1,16,0v96a8,8,0,0,0,16,0V64A16,16,0,0,1,56,48H216A16,16,0,0,1,232,64Zm-16,0H56V184a23.84,23.84,0,0,1-1.37,8H208a8,8,0,0,0,8-8Z"></path></svg>';
-const STACK_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M230.91,172A8,8,0,0,1,228,182.91l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,36,169.09l92,53.65,92-53.65A8,8,0,0,1,230.91,172ZM220,121.09l-92,53.65L36,121.09A8,8,0,0,0,28,134.91l96,56a8,8,0,0,0,8.06,0l96-56A8,8,0,1,0,220,121.09ZM24,80a8,8,0,0,1,4-6.91l96-56a8,8,0,0,1,8.06,0l96,56a8,8,0,0,1,0,13.82l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,24,80Zm23.88,0L128,126.74,208.12,80,128,33.26Z"></path></svg>';
-const INFO_ICON = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm12-88a12,12,0,0,1-24,0V88a12,12,0,0,1,24,0Zm-12,44a12,12,0,1,1,12-12A12,12,0,0,1,128,172Z"></path></svg>';
+const phoneQuery = matchMedia("(max-width: 899px)");
+const isPhone = () => phoneQuery.matches;
+
+const svg = (body, { fill = false, w = 2 } = {}) =>
+  `<svg viewBox="0 0 24 24" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+const ICONS = {
+  refresh: svg('<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/>'),
+  search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  plusCircle: svg('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'),
+  bookmark: svg('<path d="M6 3h12v18l-6-4-6 4z"/>'),
+  bookmarkFill: svg('<path d="M6 3h12v18l-6-4-6 4z"/>', { fill: true }),
+  stories: svg('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/>'),
+  back: svg('<path d="m15 6-6 6 6 6"/>', { w: 2.2 }),
+  next: svg('<path d="m9 6 6 6-6 6"/>', { w: 2.2 }),
+  chevron: svg('<path d="m9 6 6 6-6 6"/>', { w: 2.5 }),
+};
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+function readSecret() {
+  try { return localStorage.getItem(SECRET_KEY) || ""; } catch { return ""; }
+}
+
 function apiHeaders() {
   const h = { "Content-Type": "application/json" };
-  if (REFRESH_SECRET) h["x-refresh-secret"] = REFRESH_SECRET;
+  const secret = readSecret();
+  if (secret) h["x-refresh-secret"] = secret;
   return h;
+}
+
+// One prompt at a time, however many calls hit a 401 together.
+let secretPrompt = null;
+function askForSecret() {
+  if (secretPrompt) return secretPrompt;
+  secretPrompt = new Promise((resolve) => {
+    const form = keyDialog.querySelector("form");
+    // Settle from the submit itself (it names the button pressed); Esc and
+    // close are fallbacks for dismissing without a button.
+    const finish = (save) => {
+      form.removeEventListener("submit", onSubmit);
+      keyDialog.removeEventListener("cancel", onDismiss);
+      keyDialog.removeEventListener("close", onDismiss);
+      const value = keyInput.value.trim();
+      const saved = Boolean(save && value);
+      if (saved) {
+        try { localStorage.setItem(SECRET_KEY, value); } catch {}
+      }
+      secretPrompt = null;
+      resolve(saved);
+    };
+    const onSubmit = (e) => finish(e.submitter?.value === "save");
+    const onDismiss = () => finish(false);
+    form.addEventListener("submit", onSubmit);
+    keyDialog.addEventListener("cancel", onDismiss);
+    keyDialog.addEventListener("close", onDismiss);
+    keyInput.value = "";
+    keyDialog.showModal();
+    keyInput.focus();
+  });
+  return secretPrompt;
+}
+
+// POST to our API. A 401 means the key is missing or wrong: ask, then retry once.
+async function apiPost(path, body) {
+  const send = () => fetch(path, {
+    method: "POST", headers: apiHeaders(),
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const res = await send();
+  if (res.status === 401 && await askForSecret()) return send();
+  return res;
 }
 
 function dayOf(s) {
   return s.published_at || s.found_on;
 }
 
+const byId = (id) => stories.find((s) => String(s.id) === String(id));
+const beatLabel = (id) => (id === "ai_industry" ? "AI infra" : BUCKETS.find((b) => b.id === id)?.label || "");
+
 function unreadCount(bucketId) {
   return stories.filter((s) =>
     (bucketId === "all" || s.bucket === bucketId) && !s.is_read && !s.dismissed).length;
 }
 
-const BEAT_COLORS = {
-  hpe: "#86efac", cisco: "#7dd3fc", arista: "#fdba74", silicon: "#c4b5fd",
-  ai_industry: "#fcd34d", space: "#67e8f9", standards: "#fda4af",
-};
-
-function navItem(id, inner, active) {
-  const btn = document.createElement("button");
-  btn.className = "nav-item" + (active ? " active" : "");
-  btn.innerHTML = inner;
-  btn.addEventListener("click", () => {
-    activeBucket = id;
-    openId = null;
-    renderNav();
-    renderFeed();
-    window.scrollTo({ top: 0 });
-  });
-  return btn;
-}
-
-function renderNav() {
-  sideEl.innerHTML = "";
-  const count = (id) => {
-    const n = unreadCount(id);
-    return n > 0 ? `<span class="count">${n}</span>` : "";
-  };
-  const sep = () => Object.assign(document.createElement("div"), { className: "nav-sep" });
-
-  sideEl.appendChild(navItem("all", `${NEWS_ICON}<span>Top stories</span>${count("all")}`, activeBucket === "all"));
-  sideEl.appendChild(sep());
-  BUCKETS.filter((b) => b.id !== "all").forEach((b) => {
-    sideEl.appendChild(navItem(b.id,
-      `<span class="nav-swatch" style="background:${BEAT_COLORS[b.id]}"></span><span>${esc(b.label)}</span>${count(b.id)}`,
-      activeBucket === b.id));
-  });
-  sideEl.appendChild(sep());
-  sideEl.appendChild(navItem("saved", `${BOOKMARK_OUTLINE}<span>Saved</span>`, activeBucket === "saved"));
-}
-
-function renderHead() {
-  feedTitleEl.textContent = activeBucket === "all" ? "Top stories"
-    : activeBucket === "saved" ? "Saved"
-    : FULL_NAMES[activeBucket];
-  feedSubEl.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-}
-
 function relativeDay(dateStr) {
-  if (!dateStr) return "Date unknown";
+  if (!dateStr) return "";
   const d = new Date(dateStr + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diff = Math.round((today - d) / 86400000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
-  if (diff < 0) return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  if (diff < 7) return `${diff} days ago`;
+  if (diff > 1 && diff < 7) return `${diff}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
@@ -470,15 +587,6 @@ function formatDay(dateStr) {
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-}
-
-// Publisher chip: first letter on a color derived from the name, so each
-// outlet keeps the same color everywhere.
-function avatarFor(source) {
-  const name = String(source || "?").replace(/^the\s+/i, "");
-  let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
-  return `<span class="avatar" style="background:hsl(${h} 55% 74%)">${esc(name[0].toUpperCase())}</span>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -507,179 +615,262 @@ function sameEvent(a, b) {
 
 // Input is newest-first, so each cluster's first story is its newest.
 function clusterStories(list) {
-  const clusters = [];
+  const out = [];
   for (const s of list) {
     const terms = headlineTerms(s.headline);
-    const home = clusters.find((c) => c.terms.some((t) => sameEvent(terms, t)));
+    const home = out.find((c) => c.terms.some((t) => sameEvent(terms, t)));
     if (home) {
       home.items.push(s);
       home.terms.push(terms);
     } else {
-      clusters.push({ items: [s], terms: [terms] });
+      out.push({ items: [s], terms: [terms] });
     }
   }
-  return clusters;
+  return out;
 }
 
-function storyEl(s, { lead = false, showBeat = false } = {}) {
-  const el = document.createElement("div");
-  const isOpen = openId === s.id;
-  el.className = "story" + (lead ? " lead" : "") + (isOpen ? " open" : "")
-    + (s.is_read && !isOpen ? " read" : "") + (s.dismissed ? " dismissed" : "");
-  el.dataset.storyId = s.id;
-  const beat = BUCKETS.find((b) => b.id === s.bucket);
-  el.innerHTML = `
-    <div class="src-line">
-      ${avatarFor(s.source)}
-      <span class="src-name">${esc(s.source)}</span>
-      <span class="when">· ${relativeDay(dayOf(s))}</span>
-      ${s.is_read ? "" : '<span class="dot" title="Unread"></span>'}
-      <span class="kicker" data-tag="${esc(s.tag)}">${esc(s.tag)}</span>
-      ${s.is_blog ? '<span class="badge">Blog post</span>' : ""}
-      ${s.is_manual ? '<span class="badge">Added by you</span>' : ""}
-      <span class="trail">
-        ${showBeat && beat ? `<span class="beat-pill" style="--beat:${BEAT_COLORS[s.bucket]}">${esc(beat.label)}</span>` : ""}
-        <button class="save-btn js-save ${s.saved ? "on" : ""}" aria-pressed="${s.saved ? "true" : "false"}" aria-label="${s.saved ? "Remove from saved" : "Save article"}" title="${s.saved ? "Remove from saved" : "Save"}">${s.saved ? BOOKMARK_FILL : BOOKMARK_OUTLINE}</button>
-      </span>
-    </div>
-    <h3 class="story-title">${esc(s.headline)}</h3>
-    ${lead && s.teaser && s.teaser !== s.headline ? `<p class="lead-teaser">${esc(s.teaser)}</p>` : ""}
-    <div class="story-body">
-      <p class="summary ${s.summary ? "" : "pending"}">${s.summary ? esc(s.summary) : "Writing summary…"}</p>
-      <div class="actions">
-        <a class="link" href="${esc(s.url)}" target="_blank" rel="noopener">Read source →</a>
-        <button class="text-btn js-dismiss">${s.dismissed ? "Undo not relevant" : "Not relevant"}</button>
-      </div>
-    </div>`;
-
-  el.querySelector(".js-dismiss").addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleDismissed(s);
-  });
-
-  el.querySelector(".js-save").addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleSaved(s);
-  });
-
-  el.addEventListener("click", (e) => {
-    if (e.target.closest("a, button, .story-body")) return;
-    const opening = openId !== s.id;
-    if (opening) openWasRead = s.is_read;
-    openId = opening ? s.id : null;
-    renderFeed();
-    if (opening) {
-      if (!s.summary) ensureSummary(s);
-      if (!s.is_read) markRead(s);
-      document.querySelector(`[data-story-id="${s.id}"]`)
-        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  });
-
-  return el;
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+function render() {
+  document.body.classList.toggle("reading", openId !== null);
+  renderNav();
+  renderFeed();
+  renderReader();
 }
 
-const RELATED_SHOWN = 3;
+function renderNav() {
+  const beat = (id, label, mark, count, compact) => {
+    const on = activeBucket === id;
+    const n = count ? `<span class="count">${count}</span>` : "";
+    return compact
+      ? `<button class="chip${on ? " on" : ""}" data-beat="${id}" aria-pressed="${on}">${mark}${esc(label)}${n}</button>`
+      : `<button class="beat${on ? " on" : ""}" data-beat="${id}" aria-current="${on ? "page" : "false"}">${mark}<span class="beat-label">${esc(label)}</span>${n}</button>`;
+  };
+  const swatch = (id) => `<span class="swatch" style="background:${BEAT_COLORS[id]}"></span>`;
+  const blank = '<span class="swatch"></span>';
+  const savedN = stories.filter((s) => s.saved).length;
 
-function clusterEl(cluster, { showBeat = false, faded = false } = {}) {
-  const [lead, ...rest] = cluster.items;
-  const el = document.createElement("article");
-  el.className = "cluster" + (faded ? " faded" : "");
-  el.appendChild(storyEl(lead, { lead: true, showBeat }));
+  railBeatsEl.innerHTML =
+    beat("all", "Top stories", blank, unreadCount("all") || "", false) +
+    BUCKETS.filter((b) => b.id !== "all").map((b) => beat(b.id, beatLabel(b.id), swatch(b.id), unreadCount(b.id) || "", false)).join("") +
+    '<div class="rail-sep"></div>' +
+    beat("saved", "Saved", ICONS.bookmark, savedN || "", false);
 
-  const expanded = expandedClusters.has(lead.id);
-  rest.forEach((s, i) => {
-    // An open story stays visible even when coverage is collapsed.
-    if (expanded || i < RELATED_SHOWN || s.id === openId) el.appendChild(storyEl(s));
+  chipBeatsEl.innerHTML =
+    beat("all", "All", "", unreadCount("all") || "", true) +
+    BUCKETS.filter((b) => b.id !== "all").map((b) => beat(b.id, beatLabel(b.id), swatch(b.id), unreadCount(b.id) || "", true)).join("");
+
+  document.querySelectorAll(".tab").forEach((t) => {
+    const on = t.dataset.tab === (activeBucket === "saved" ? "saved" : "stories");
+    t.classList.toggle("on", on);
   });
+}
 
-  if (rest.length > RELATED_SHOWN) {
-    const outlets = new Set(cluster.items.map((s) => s.source)).size;
-    const btn = document.createElement("button");
-    btn.className = "coverage";
-    btn.innerHTML = expanded
-      ? `${STACK_ICON}<span>Show less</span>`
-      : `${STACK_ICON}<span>Full coverage · ${cluster.items.length} stories from ${outlets} outlets</span>`;
-    btn.addEventListener("click", () => {
-      if (expanded) expandedClusters.delete(lead.id);
-      else expandedClusters.add(lead.id);
-      renderFeed();
-    });
-    el.appendChild(btn);
-  }
-  return el;
+function renderChips() {
+  if (activeBucket === "saved") { tagChipsEl.innerHTML = ""; return; }
+  const chips = [["all", "All"], ["unread", "Unread"], ...TAGS.map((t) => [t, t])];
+  tagChipsEl.innerHTML = chips.map(([id, label]) =>
+    `<button class="chip${activeChip === id ? " on" : ""}" data-chip="${esc(id)}" aria-pressed="${activeChip === id}">${esc(label)}</button>`
+  ).join("");
+}
+
+function renderHead(unreadN, savedN) {
+  listTitleEl.textContent = activeBucket === "all" ? "Top stories"
+    : activeBucket === "saved" ? "Saved"
+    : FULL_NAMES[activeBucket];
+  const date = new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  listSubEl.textContent = refreshStatus
+    || (activeBucket === "saved" ? `${savedN} saved`
+      : `${date} · ${unreadN ? `${unreadN} unread` : "all caught up"}`);
+}
+
+function matchesQuery(s) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return [s.headline, s.source, s.teaser, s.tag].some((v) => String(v || "").toLowerCase().includes(q));
+}
+
+function rowHtml(cluster, { showBeat }) {
+  const items = cluster.items;
+  const lead = items[0];
+  const selected = items.some((s) => s.id === openId);
+  const pinned = (s) => s.id === openId && !openWasRead;
+  const unread = items.some((s) => !s.is_read);
+  const read = !items.some((s) => !s.is_read || pinned(s));
+  const outlets = new Set(items.map((s) => s.source)).size;
+  const label = showBeat ? beatLabel(lead.bucket) : (lead.tag && lead.tag !== "Other" ? lead.tag : "");
+  const cov = items.length > 1
+    ? `<span class="row-cov">${outlets > 1 ? `${outlets} outlets covering this` : `${items.length} stories`}</span>` : "";
+  return `
+    <li class="row${selected ? " on" : ""}${read ? " read" : ""}${lead.dismissed ? " dismissed" : ""}">
+      <button class="row-btn" data-open="${lead.id}">
+        <span class="row-meta">
+          <span class="swatch" style="background:${BEAT_COLORS[lead.bucket] || "transparent"}"></span>
+          ${label ? `<span>${esc(label)}</span><span aria-hidden="true">·</span>` : ""}
+          <span class="row-src">${esc(lead.source)}</span>
+          <span class="row-time">${esc(relativeDay(dayOf(lead)))}</span>
+          ${unread && !selected ? '<span class="unread-dot" title="Unread"></span>' : ""}
+        </span>
+        <span class="row-title">${esc(lead.headline)}</span>
+        ${cov}
+      </button>
+    </li>`;
 }
 
 // Saved is its own view: no grouping, no read pile, ordered by when you
 // saved it rather than when it was published.
 function renderSaved() {
   const list = stories
-    .filter((s) => s.saved)
+    .filter((s) => s.saved && matchesQuery(s))
     .sort((a, b) => String(b.saved_at || "").localeCompare(String(a.saved_at || "")));
-
-  feedNoteEl.textContent = `${list.length} saved`;
-  feedSubEl.textContent = `${list.length} saved, newest save first`;
-  feedEl.innerHTML = "";
+  clusters = list.map((s) => ({ items: [s] }));
+  renderHead(0, list.length);
 
   if (!list.length) {
-    feedEl.innerHTML = `<div class="empty">${BOOKMARK_OUTLINE}<span>Nothing saved yet. Tap the bookmark on any story and it collects here, newest save first.</span></div>`;
+    feedEl.innerHTML = `<div class="empty">${query ? "No saved stories match that search." : "Nothing saved yet. Save any story and it collects here, newest save first."}</div>`;
     return;
   }
-
-  list.forEach((s) => feedEl.appendChild(clusterEl({ items: [s] }, { showBeat: true, faded: s.is_read })));
+  feedEl.innerHTML = `<ul class="rows">${clusters.map((c) => rowHtml(c, { showBeat: true })).join("")}</ul>`;
 }
 
 function renderFeed() {
-  renderHead();
+  renderChips();
   if (activeBucket === "saved") return renderSaved();
 
-  let list = stories.filter((s) => activeBucket === "all" || s.bucket === activeBucket);
-  if (activeTag !== "all") list = list.filter((s) => s.tag === activeTag);
-
   const pinnedUp = (s) => s.id === openId && !openWasRead;
-  const clusters = clusterStories(list);
+  let list = stories.filter((s) => (activeBucket === "all" || s.bucket === activeBucket) && matchesQuery(s));
+  if (activeChip === "unread") list = list.filter((s) => !s.is_read || pinnedUp(s));
+  else if (activeChip !== "all") list = list.filter((s) => s.tag === activeChip);
+
+  clusters = clusterStories(list);
   const fresh = clusters.filter((c) => c.items.some((s) => !s.is_read || pinnedUp(s)));
   const read = clusters.filter((c) => !fresh.includes(c));
-
-  const unreadN = list.filter((s) => !s.is_read).length;
-  feedNoteEl.textContent = `${unreadN} unread · ${list.length - unreadN} read`
-    + (activeBucket === "all" ? "" : ` · ${FULL_NAMES[activeBucket]}`);
-  feedSubEl.textContent += unreadN ? ` · ${unreadN} unread` : " · all caught up";
-
-  feedEl.innerHTML = "";
+  renderHead(list.filter((s) => !s.is_read && !s.dismissed).length, 0);
 
   if (!list.length) {
-    feedEl.innerHTML = `<div class="empty">${INFO_ICON}<span>Nothing in this beat yet. Refresh to check the feeds, or add a story it missed from the Filters menu.</span></div>`;
+    feedEl.innerHTML = `<div class="empty">${
+      query ? "No stories match that search."
+      : activeChip !== "all" ? "Nothing here with that filter."
+      : "Nothing in this beat yet. Refresh to check the feeds, or add a story it missed."}</div>`;
     return;
   }
 
   const showBeat = activeBucket === "all";
-  fresh.forEach((c) => feedEl.appendChild(clusterEl(c, { showBeat })));
+  const showPile = pileOpen || read.some((c) => c.items.some((s) => s.id === openId));
+  feedEl.innerHTML = `
+    <ul class="rows">${fresh.map((c) => rowHtml(c, { showBeat })).join("")}</ul>
+    ${!fresh.length ? '<div class="empty">All caught up.</div>' : ""}
+    ${read.length ? `
+      <button class="pile-toggle" data-action="pile" aria-expanded="${showPile}">${ICONS.chevron}Already read · ${read.length}</button>
+      ${showPile ? `<ul class="rows">${read.map((c) => rowHtml(c, { showBeat })).join("")}</ul>` : ""}` : ""}`;
+}
 
-  if (read.length) {
-    const pile = document.createElement("div");
-    pile.className = "pile";
-    const toggle = document.createElement("button");
-    toggle.className = "pile-toggle";
-    toggle.textContent = `${pileOpen ? "▾" : "▸"} Already read (${read.length})`;
-    toggle.addEventListener("click", () => {
-      pileOpen = !pileOpen;
-      renderFeed();
-    });
-    pile.appendChild(toggle);
-    if (pileOpen || read.some((c) => c.items.some((s) => s.id === openId))) {
-      read.forEach((c) => pile.appendChild(clusterEl(c, { showBeat, faded: true })));
-    }
-    feedEl.appendChild(pile);
+function summaryHtml(s) {
+  if (!s.summary) return '<div class="summary pending">Writing summary…</div>';
+  const paras = String(s.summary).split(/\n\s*\n/).map((p) => `<p>${esc(p.trim())}</p>`).join("");
+  return `<div class="summary">${paras}</div>`;
+}
+
+function nextUnread() {
+  const fresh = clusters.filter((c) => c.items.some((s) => !s.is_read && !s.dismissed));
+  return fresh.map((c) => c.items.find((s) => !s.is_read && !s.dismissed)).find((s) => s && s.id !== openId) || null;
+}
+
+function renderReader() {
+  const s = openId !== null ? byId(openId) : null;
+  if (!s) {
+    const n = unreadCount("all");
+    readerEl.innerHTML = `<div class="reader-empty"><strong>${n ? `${n} unread` : "All caught up"}</strong>Pick a story to read its summary and see who else is covering it.</div>`;
+    return;
   }
+
+  const cluster = clusters.find((c) => c.items.some((x) => x.id === s.id)) || { items: [s] };
+  const others = cluster.items.filter((x) => x.id !== s.id);
+  const outlets = new Set(cluster.items.map((x) => x.source)).size;
+  const remaining = clusters.filter((c) => c.items.some((x) => !x.is_read && !x.dismissed)).length;
+  const backLabel = activeBucket === "all" ? "Top stories" : activeBucket === "saved" ? "Saved" : beatLabel(activeBucket);
+
+  readerEl.innerHTML = `
+    <div class="reader-inner">
+      <div class="reader-back">
+        <button class="back-btn" data-action="back">${ICONS.back}${esc(backLabel)}</button>
+        <span class="reader-pos">${remaining ? `${remaining} unread left` : "All caught up"}</span>
+      </div>
+      <div class="reader-meta">
+        <span class="beat-pill" style="--beat:${BEAT_COLORS[s.bucket] || "var(--muted)"}"><span class="swatch"></span>${esc(beatLabel(s.bucket))}</span>
+        ${s.tag && s.tag !== "Other" ? `<span>${esc(s.tag)}</span><span aria-hidden="true">·</span>` : ""}
+        <span>${esc(s.source)}</span><span aria-hidden="true">·</span><span>${esc(relativeDay(dayOf(s)) || "Date unknown")}</span>
+        ${s.is_blog ? '<span class="badge">· Blog post</span>' : ""}
+        ${s.is_manual ? '<span class="badge">· Added by you</span>' : ""}
+      </div>
+      <h2 class="reader-title">${esc(s.headline)}</h2>
+      <div class="actions">
+        <a class="btn primary" href="${esc(s.url)}" target="_blank" rel="noopener">Read on ${esc(s.source)} ↗</a>
+        <button class="btn js-save${s.saved ? " saved" : ""}" aria-pressed="${s.saved}" aria-label="${s.saved ? "Remove from saved" : "Save story"}">${s.saved ? ICONS.bookmarkFill : ICONS.bookmark}<span class="btn-label">${s.saved ? "Saved" : "Save"}</span></button>
+        <button class="btn desk-only js-dismiss">${s.dismissed ? "Undo not relevant" : "Not relevant"}</button>
+        <button class="btn next-btn" data-action="next" aria-label="Next unread story">${ICONS.next}</button>
+      </div>
+      <section class="summary-block">
+        <div class="section-head">
+          <h3 class="label">Summary</h3>
+          <span class="label-note">AI summary · check the source for detail</span>
+        </div>
+        ${summaryHtml(s)}
+      </section>
+      ${others.length ? `
+        <section class="coverage">
+          <h3 class="label">Full coverage · ${outlets} outlet${outlets > 1 ? "s" : ""}</h3>
+          <ul class="cov-list">
+            ${others.map((x) => `
+              <li><button class="cov-item${x.is_read ? " read" : ""}" data-open="${x.id}">
+                <span class="cov-src">${esc(x.source)}</span>
+                <span class="cov-title">${esc(x.headline)}</span>
+              </button></li>`).join("")}
+          </ul>
+        </section>` : ""}
+      <button class="dismiss-link js-dismiss">${s.dismissed ? "Undo not relevant" : "Not relevant — show me less like this"}</button>
+    </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+function openStory(s) {
+  if (!s) return;
+  const already = openId === s.id;
+  if (!already) {
+    openWasRead = s.is_read;
+    openId = s.id;
+  }
+  if (isPhone()) {
+    if (history.state?.story !== undefined) history.replaceState({ story: s.id }, "");
+    else history.pushState({ story: s.id }, "");
+  }
+  if (!s.summary) ensureSummary(s);
+  if (!s.is_read) markRead(s);
+  render();
+  readerEl.scrollTop = 0;
+  if (isPhone()) window.scrollTo({ top: 0 });
+}
+
+function closeStory() {
+  openId = null;
+  render();
+}
+
+function selectBeat(id) {
+  activeBucket = id;
+  openId = null;
+  if (id === "saved") activeChip = "all";
+  render();
+  listEl.scrollTop = 0;
+  window.scrollTo({ top: 0 });
 }
 
 async function ensureSummary(story) {
   try {
-    const res = await fetch("/api/summarize", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ story_id: story.id }),
-    });
+    const res = await apiPost("/api/summarize", { story_id: story.id });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Summary failed");
     story.summary = result.summary;
@@ -687,12 +878,11 @@ async function ensureSummary(story) {
     console.error(err);
     story.summary = "Couldn't write a summary — open the source instead.";
   }
-  renderFeed();
+  if (openId === story.id) renderReader();
 }
 
 async function markRead(story) {
   story.is_read = true;
-  renderNav();
   const { error } = await supabase.rpc("mark_story_read", { story_id: story.id });
   if (error) console.error("Failed to mark read:", error);
 }
@@ -701,38 +891,28 @@ async function toggleSaved(story) {
   const next = !story.saved;
   story.saved = next;
   story.saved_at = next ? new Date().toISOString() : null;
-  // Unsaving from the Saved view removes the card outright, so don't leave an
-  // open body pointing at a story that's no longer rendered.
-  if (!next && activeBucket === "saved" && openId === story.id) openId = null;
-  renderNav();
-  renderFeed();
+  render();
 
   const { error } = await supabase.rpc("set_story_saved", { story_id: story.id, value: next });
   if (error) {
     console.error("Failed to save:", error);
     story.saved = !next;
-    renderNav();
-    renderFeed();
+    render();
   }
 }
 
 async function toggleDismissed(story) {
   const next = !story.dismissed;
   story.dismissed = next;
-  renderNav();
-  renderFeed();
+  render();
   try {
-    const res = await fetch("/api/feedback", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ story_id: story.id, dismissed: next }),
-    });
+    const res = await apiPost("/api/feedback", { story_id: story.id, dismissed: next });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Feedback failed");
   } catch (err) {
     console.error(err);
     story.dismissed = !next;
-    renderNav();
-    renderFeed();
+    render();
   }
 }
 
@@ -744,14 +924,13 @@ async function loadStories() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    feedEl.innerHTML = `<div class="empty">${INFO_ICON}<span>Couldn't load stories — check the Supabase keys in index.html.</span></div>`;
+    feedEl.innerHTML = '<div class="empty">Couldn\'t load stories — check the Supabase keys in index.html.</div>';
     console.error(error);
     return;
   }
 
   stories = data || [];
-  renderNav();
-  renderFeed();
+  render();
 
   const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
   if (last) {
@@ -763,13 +942,17 @@ async function loadStories() {
   }
 }
 
+function setRefreshStatus(text) {
+  refreshStatus = text;
+  renderHead(unreadCount(activeBucket === "saved" ? "all" : activeBucket), stories.filter((s) => s.saved).length);
+}
+
 // Refresh runs one beat per call — Hobby's 60s cap and the free-tier
 // tokens-per-minute ceiling both rule out doing all seven at once.
 async function triggerRefresh() {
   if (refreshing) return;
   refreshing = true;
-  refreshBtn.disabled = true;
-  refreshBtn.classList.add("loading");
+  refreshBtns.forEach((b) => { b.disabled = true; b.classList.add("loading"); });
   progressTrack.classList.add("active");
   progressFill.style.width = "0%";
 
@@ -780,8 +963,8 @@ async function triggerRefresh() {
 
   try {
     while (cursor !== null) {
-      refreshLabel.textContent = `${Math.min(cursor + 1, total)} of ${total}`;
-      const res = await fetch(`/api/refresh?cursor=${cursor}`, { method: "POST", headers: apiHeaders() });
+      setRefreshStatus(`Checking feeds · ${Math.min(cursor + 1, total)} of ${total}`);
+      const res = await apiPost(`/api/refresh?cursor=${cursor}`);
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error || "Refresh failed");
 
@@ -794,25 +977,22 @@ async function triggerRefresh() {
     }
 
     localStorage.setItem(LAST_REFRESH_KEY, String(Date.now()));
-    await loadStories();
-    refreshLabel.textContent = inserted ? `${inserted} new` : "Nothing new";
-
+    refreshStatus = inserted ? `${inserted} new ${inserted === 1 ? "story" : "stories"}` : "Nothing new";
     if (problems.length) {
       console.warn("Feeds failing or returning nothing:", problems);
-      feedNoteEl.textContent += ` · ${problems.length} feed${problems.length > 1 ? "s" : ""} need attention (see console)`;
+      refreshStatus += ` · ${problems.length} feed${problems.length > 1 ? "s" : ""} need attention`;
     }
+    await loadStories();
   } catch (err) {
     console.error(err);
-    refreshLabel.textContent = "Failed";
-    feedNoteEl.textContent = String(err.message || err).slice(0, 140);
+    setRefreshStatus("Refresh failed — " + String(err.message || err).slice(0, 100));
   } finally {
     refreshing = false;
-    refreshBtn.classList.remove("loading");
-    refreshBtn.disabled = false;
+    refreshBtns.forEach((b) => { b.disabled = false; b.classList.remove("loading"); });
     setTimeout(() => {
-      refreshLabel.textContent = "Refresh";
       progressTrack.classList.remove("active");
       progressFill.style.width = "0%";
+      setRefreshStatus("");
     }, 3500);
   }
 }
@@ -829,10 +1009,7 @@ async function submitStory() {
   submitStatus.textContent = "Reading the page…";
 
   try {
-    const res = await fetch("/api/submit", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ url, bucket: submitBucket.value, note: submitNote.value.trim() }),
-    });
+    const res = await apiPost("/api/submit", { url, bucket: submitBucket.value, note: submitNote.value.trim() });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Submit failed");
 
@@ -851,7 +1028,26 @@ async function submitStory() {
   }
 }
 
+function openAdd() {
+  submitStatus.classList.remove("err");
+  submitStatus.textContent = "The source becomes trusted and shapes future picks.";
+  if (activeBucket !== "all" && activeBucket !== "saved") submitBucket.value = activeBucket;
+  addDialog.showModal();
+  submitUrl.focus();
+}
+
 // --- wiring ----------------------------------------------------------------
+refreshBtns.forEach((b) => { b.innerHTML = ICONS.refresh; b.addEventListener("click", triggerRefresh); });
+document.querySelectorAll(".js-search-icon").forEach((el) => { el.outerHTML = ICONS.search; });
+document.querySelector(".js-plus-icon").outerHTML = ICONS.plus;
+searchToggle.innerHTML = ICONS.search;
+const TAB_CONTENT = {
+  stories: `${ICONS.stories}Stories`,
+  saved: `${ICONS.bookmark}Saved`,
+  add: `${ICONS.plusCircle}Add story`,
+};
+document.querySelectorAll(".tab").forEach((t) => { t.innerHTML = TAB_CONTENT[t.dataset.tab]; });
+
 BUCKETS.filter((b) => b.id !== "all").forEach((b) => {
   const opt = document.createElement("option");
   opt.value = b.id;
@@ -859,26 +1055,83 @@ BUCKETS.filter((b) => b.id !== "all").forEach((b) => {
   submitBucket.appendChild(opt);
 });
 
-refreshBtn.addEventListener("click", triggerRefresh);
-submitGo.addEventListener("click", submitStory);
-submitUrl.addEventListener("keydown", (e) => { if (e.key === "Enter") submitStory(); });
+const onBeatClick = (e) => {
+  const b = e.target.closest("[data-beat]");
+  if (b) selectBeat(b.dataset.beat);
+};
+railBeatsEl.addEventListener("click", onBeatClick);
+chipBeatsEl.addEventListener("click", onBeatClick);
 
-menuBtn.addEventListener("click", () => {
-  const open = menuEl.classList.toggle("open");
-  menuBtn.setAttribute("aria-expanded", String(open));
+tagChipsEl.addEventListener("click", (e) => {
+  const c = e.target.closest("[data-chip]");
+  if (!c) return;
+  activeChip = c.dataset.chip;
+  render();
 });
 
-tagFilterEl.addEventListener("change", (e) => {
-  activeTag = e.target.value;
-  openId = null;
-  menuDot.classList.toggle("show", activeTag !== "all");
+feedEl.addEventListener("click", (e) => {
+  const row = e.target.closest("[data-open]");
+  if (row) return openStory(byId(row.dataset.open));
+  if (e.target.closest('[data-action="pile"]')) {
+    pileOpen = !pileOpen;
+    renderFeed();
+  }
+});
+
+readerEl.addEventListener("click", (e) => {
+  const s = byId(openId);
+  const t = e.target;
+  if (t.closest("[data-open]")) return openStory(byId(t.closest("[data-open]").dataset.open));
+  if (t.closest('[data-action="back"]')) {
+    if (history.state?.story !== undefined) history.back();
+    else closeStory();
+    return;
+  }
+  if (!s) return;
+  if (t.closest('[data-action="next"]')) {
+    const n = nextUnread();
+    if (n) openStory(n);
+    else if (history.state?.story !== undefined) history.back();
+    else closeStory();
+  }
+  if (t.closest(".js-save")) toggleSaved(s);
+  if (t.closest(".js-dismiss")) toggleDismissed(s);
+});
+
+// Phone back gesture closes the story view.
+window.addEventListener("popstate", (e) => {
+  if (e.state?.story === undefined && openId !== null) closeStory();
+});
+
+searchInputs.forEach((input) => input.addEventListener("input", () => {
+  query = input.value.trim();
+  searchInputs.forEach((other) => { if (other !== input) other.value = input.value; });
   renderFeed();
+}));
+
+searchToggle.addEventListener("click", () => {
+  const open = phoneSearch.classList.toggle("open");
+  searchToggle.setAttribute("aria-expanded", String(open));
+  if (open) phoneSearch.querySelector("input").focus();
 });
 
-// Pull to refresh — phone only; the sticky bar covers the laptop.
+document.querySelector(".js-add").addEventListener("click", openAdd);
+document.querySelector(".tabbar").addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
+  if (t.dataset.tab === "add") openAdd();
+  else selectBeat(t.dataset.tab === "saved" ? "saved" : "all");
+});
+
+submitGo.addEventListener("click", submitStory);
+submitUrl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); submitStory(); }
+});
+
+// Pull to refresh — phone list only; the desktop has the button in reach.
 let pullStart = null;
 window.addEventListener("touchstart", (e) => {
-  pullStart = window.scrollY <= 0 ? e.touches[0].clientY : null;
+  pullStart = window.scrollY <= 0 && openId === null ? e.touches[0].clientY : null;
 }, { passive: true });
 window.addEventListener("touchmove", (e) => {
   if (pullStart === null || refreshing) return;
@@ -894,9 +1147,10 @@ window.addEventListener("touchend", () => {
 await loadStories();
 
 // Hobby crons fire once a day and can't finish the whole loop, so the page
-// keeps itself current when you open it.
+// keeps itself current when you open it. Without a key, wait for a manual
+// refresh rather than greeting every visitor with a prompt.
 const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
-if (Date.now() - last > STALE_HOURS * 3600 * 1000) triggerRefresh();
+if (readSecret() && Date.now() - last > STALE_HOURS * 3600 * 1000) triggerRefresh();
 </script>
 </body>
 </html>
