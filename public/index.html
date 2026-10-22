@@ -380,14 +380,30 @@
   </form>
 </dialog>
 
+<dialog id="key-dialog" aria-labelledby="key-title">
+  <form class="add-form" method="dialog">
+    <h2 id="key-title">Enter your access key</h2>
+    <p class="note">Refreshing, summaries and feedback need the <code>REFRESH_SECRET</code> set in Vercel. It's saved in this browser only.</p>
+    <label class="field">Access key
+      <input class="input" id="key-input" type="password" autocomplete="current-password">
+    </label>
+    <div class="form-btns">
+      <button class="btn" value="cancel">Not now</button>
+      <button class="btn primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ---- PASTE YOUR REAL VALUES HERE ----
 const SUPABASE_URL = "https://lbkvvpikphwzquuavwzf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxia3Z2cGlrcGh3enF1dWF2d3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjIzNTIsImV4cCI6MjEwMzg5ODM1Mn0.yP-WPFUVAXJGaOxqRw6gDmrEjoo2eW4X78E7tvTvDuY";
-const REFRESH_SECRET = "8928eff4ee9582ed787dbe0db1366c4f";
 // --------------------------------------
+// The refresh secret never ships in the page: it's asked for on first use
+// and kept in this browser only.
+const SECRET_KEY = "backbone:refreshSecret";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -458,6 +474,8 @@ const submitNote = document.getElementById("submit-note");
 const submitGo = document.getElementById("submit-go");
 const submitStatus = document.getElementById("submit-status");
 const pullEl = document.getElementById("pull");
+const keyDialog = document.getElementById("key-dialog");
+const keyInput = document.getElementById("key-input");
 
 const phoneQuery = matchMedia("(max-width: 899px)");
 const isPhone = () => phoneQuery.matches;
@@ -482,10 +500,58 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+function readSecret() {
+  try { return localStorage.getItem(SECRET_KEY) || ""; } catch { return ""; }
+}
+
 function apiHeaders() {
   const h = { "Content-Type": "application/json" };
-  if (REFRESH_SECRET) h["x-refresh-secret"] = REFRESH_SECRET;
+  const secret = readSecret();
+  if (secret) h["x-refresh-secret"] = secret;
   return h;
+}
+
+// One prompt at a time, however many calls hit a 401 together.
+let secretPrompt = null;
+function askForSecret() {
+  if (secretPrompt) return secretPrompt;
+  secretPrompt = new Promise((resolve) => {
+    const form = keyDialog.querySelector("form");
+    // Settle from the submit itself (it names the button pressed); Esc and
+    // close are fallbacks for dismissing without a button.
+    const finish = (save) => {
+      form.removeEventListener("submit", onSubmit);
+      keyDialog.removeEventListener("cancel", onDismiss);
+      keyDialog.removeEventListener("close", onDismiss);
+      const value = keyInput.value.trim();
+      const saved = Boolean(save && value);
+      if (saved) {
+        try { localStorage.setItem(SECRET_KEY, value); } catch {}
+      }
+      secretPrompt = null;
+      resolve(saved);
+    };
+    const onSubmit = (e) => finish(e.submitter?.value === "save");
+    const onDismiss = () => finish(false);
+    form.addEventListener("submit", onSubmit);
+    keyDialog.addEventListener("cancel", onDismiss);
+    keyDialog.addEventListener("close", onDismiss);
+    keyInput.value = "";
+    keyDialog.showModal();
+    keyInput.focus();
+  });
+  return secretPrompt;
+}
+
+// POST to our API. A 401 means the key is missing or wrong: ask, then retry once.
+async function apiPost(path, body) {
+  const send = () => fetch(path, {
+    method: "POST", headers: apiHeaders(),
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const res = await send();
+  if (res.status === 401 && await askForSecret()) return send();
+  return res;
 }
 
 function dayOf(s) {
@@ -804,10 +870,7 @@ function selectBeat(id) {
 
 async function ensureSummary(story) {
   try {
-    const res = await fetch("/api/summarize", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ story_id: story.id }),
-    });
+    const res = await apiPost("/api/summarize", { story_id: story.id });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Summary failed");
     story.summary = result.summary;
@@ -843,10 +906,7 @@ async function toggleDismissed(story) {
   story.dismissed = next;
   render();
   try {
-    const res = await fetch("/api/feedback", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ story_id: story.id, dismissed: next }),
-    });
+    const res = await apiPost("/api/feedback", { story_id: story.id, dismissed: next });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Feedback failed");
   } catch (err) {
@@ -904,7 +964,7 @@ async function triggerRefresh() {
   try {
     while (cursor !== null) {
       setRefreshStatus(`Checking feeds · ${Math.min(cursor + 1, total)} of ${total}`);
-      const res = await fetch(`/api/refresh?cursor=${cursor}`, { method: "POST", headers: apiHeaders() });
+      const res = await apiPost(`/api/refresh?cursor=${cursor}`);
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error || "Refresh failed");
 
@@ -949,10 +1009,7 @@ async function submitStory() {
   submitStatus.textContent = "Reading the page…";
 
   try {
-    const res = await fetch("/api/submit", {
-      method: "POST", headers: apiHeaders(),
-      body: JSON.stringify({ url, bucket: submitBucket.value, note: submitNote.value.trim() }),
-    });
+    const res = await apiPost("/api/submit", { url, bucket: submitBucket.value, note: submitNote.value.trim() });
     const result = await res.json();
     if (!res.ok || !result.ok) throw new Error(result.error || "Submit failed");
 
@@ -1090,9 +1147,10 @@ window.addEventListener("touchend", () => {
 await loadStories();
 
 // Hobby crons fire once a day and can't finish the whole loop, so the page
-// keeps itself current when you open it.
+// keeps itself current when you open it. Without a key, wait for a manual
+// refresh rather than greeting every visitor with a prompt.
 const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
-if (Date.now() - last > STALE_HOURS * 3600 * 1000) triggerRefresh();
+if (readSecret() && Date.now() - last > STALE_HOURS * 3600 * 1000) triggerRefresh();
 </script>
 </body>
 </html>

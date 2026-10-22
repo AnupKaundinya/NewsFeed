@@ -66,10 +66,13 @@ in Hobby's function limits.
 | `LLM_MODEL` | `openai/gpt-oss-20b` |
 | `REFRESH_SECRET` | any random string |
 
-**4.** Fill in `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `REFRESH_SECRET` at the
-top of the script in `public/index.html`.
+**4.** Fill in `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of the script
+in `public/index.html`. The anon key is public by design; `REFRESH_SECRET` is
+not, so it stays out of the page.
 
-Deploy. The page refreshes itself on open if the last run was over 20 hours ago.
+Deploy. The first time you refresh, the page asks for `REFRESH_SECRET` and keeps
+it in that browser. After that it refreshes itself on open if the last run was
+over 20 hours ago.
 
 **Backfill** — a normal refresh looks back 5 days. To reach further:
 
