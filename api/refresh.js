@@ -52,7 +52,9 @@ async function loadLearning() {
 // Gather + mechanically filter a bucket's candidates.
 // ---------------------------------------------------------------------------
 async function gather(bucket, windowDays, learning) {
-  const feeds = [...bucket.feeds, { url: gnews(bucket.query), tier: 3, kind: "press" }];
+  // A beat may list several Google News queries; each is its own tier-3 feed.
+  const queries = [].concat(bucket.query);
+  const feeds = [...bucket.feeds, ...queries.map((q) => ({ url: gnews(q), tier: 3, kind: "press" }))];
   const results = await Promise.all(feeds.map(readFeed));
 
   const health = results.map((r) => ({
@@ -124,7 +126,7 @@ function scoreCandidates(candidates, learning) {
 const stem = (t) => t.replace(/(es|s)$/, "");
 
 function beatTerms(bucket) {
-  return new Set(significantTerms([bucket.label, bucket.query, ...bucket.keywords].join(" ")).map(stem));
+  return new Set(significantTerms([bucket.label, ...[].concat(bucket.query), ...bucket.keywords].join(" ")).map(stem));
 }
 
 function sameStory(a, b, common) {
@@ -167,7 +169,23 @@ Topic: "${bucket.label}".
 You are given real articles already collected from RSS feeds. Do NOT invent articles, facts, or URLs.
 Work only from the title and snippet provided.
 
-First, check relevance: an item earns a place only if it is actually about data center
+Scope: this reader cares about the data center — the networks, silicon, systems, facilities and
+companies that build and run data centers and AI clusters.
+In scope:
+- data center switching, routing, fabrics, optics and interconnect (including DCI); GPU/AI cluster networking
+- switch, NIC, DPU and optical silicon; servers and rack-scale systems built for data centers
+- hyperscalers, neoclouds and GPU clouds (CoreWeave, Crusoe, Vultr, Lambda, Nebius, Nscale, Together AI,
+  Fluidstack and similar), colocation providers (Equinix, Digital Realty and similar): their builds,
+  capacity, funding, deals, power and cooling
+- standards and protocols for data center and AI networking
+Out of scope, even when the vendor belongs to this beat:
+- enterprise campus, branch and office networking: wired or wireless LAN, Wi-Fi, SD-WAN, SASE, retail or
+  remote-site networking. (A "data center campus", meaning a site of several data center buildings, is in scope.)
+- security products, collaboration and contact-center software, observability/Splunk, certifications and
+  training, customer events, keynotes and webinars — unless the story is specifically about data center infrastructure
+- telecom/5G/mobile, consumer tech, satellite broadband, AI model or app news, stock and analyst commentary
+
+First, check relevance: an item earns a place only if it is in scope above and actually about data center
 infrastructure, networking hardware/software, or this beat's ecosystem specifically — not just AI,
 compute, or energy in general. A keyword match alone does not make something relevant. If the item
 only mentions this beat in passing, or is a broader AI/tech/energy story without a data-center-specific

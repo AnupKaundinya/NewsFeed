@@ -456,7 +456,7 @@ const FULL_NAMES = {
   cisco: "Cisco",
   arista: "Arista",
   silicon: "Silicon & Industry Trends",
-  ai_industry: "AI Industry & Broader Trends",
+  ai_industry: "AI Infrastructure & Neoclouds",
   space: "Space Data Centers",
   standards: "Networking Standards & Innovations",
 };
@@ -837,8 +837,11 @@ function renderFeed() {
     // Searching or filtering is scanning: a plain list reads fastest.
     main = rowsHtml(fresh, opts);
   } else {
-    const top = fresh.slice(0, 3);
-    const rest = fresh.slice(3);
+    // The lead and side cards go to the most widely covered events; ties stay
+    // newest first (sort is stable). Everything else keeps date order.
+    const outlets = (c) => new Set(c.items.map((s) => s.source)).size;
+    const top = [...fresh].sort((x, y) => outlets(y) - outlets(x)).slice(0, 3);
+    const rest = fresh.filter((c) => !top.includes(c));
     main = frontHtml(top, opts);
     if (rest.length && activeBucket === "all") {
       // The rest of the front page, grouped under each beat.

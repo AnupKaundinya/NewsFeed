@@ -93,7 +93,8 @@ export const BUCKETS = [
   {
     id: "cisco",
     label: "Cisco",
-    keywords: ["cisco", "nexus", "silicon one", "hypershield", "aci", "catalyst"],
+    // No "catalyst": that's Cisco's campus line, and it pulled in office/branch stories.
+    keywords: ["cisco", "nexus", "silicon one", "hypershield", "aci"],
     query: "Cisco data center networking switching",
     feeds: [DCD, FIERCE, DCK, NETWORLD, CISCO_BLOG, REGISTER, LIGHTREADING],
   },
@@ -119,15 +120,22 @@ export const BUCKETS = [
   },
   {
     id: "ai_industry",
-    label: "AI Industry & Broader Trends",
+    label: "AI Infrastructure, Neoclouds & Data Center Builds",
     keywords: [
       "hyperscaler", "ai data center", "ai infrastructure", "gpu cluster",
       "training cluster", "inference cluster", "ai supercomputer",
       "supercomputer networking", "data center power", "power grid capacity",
-      "data center cooling", "liquid cooling", "megawatt", "data center build",
-      "data center capex",
+      "data center cooling", "liquid cooling", "megawatt", "gigawatt", "data center build",
+      "data center capex", "data center campus", "colocation",
+      // Neoclouds / GPU clouds and colo operators. "lambda" also matches AWS
+      // Lambda; the LLM's scope check drops those.
+      "neocloud", "gpu cloud", "coreweave", "crusoe", "vultr", "lambda", "nebius",
+      "nscale", "together ai", "fluidstack", "applied digital", "equinix", "digital realty",
     ],
-    query: "AI data center hyperscaler capex power grid infrastructure",
+    query: [
+      "AI data center hyperscaler capex power grid infrastructure",
+      "CoreWeave OR Crusoe OR Vultr OR Nebius OR Lambda OR Nscale OR Fluidstack data center GPU cloud",
+    ],
     feeds: [DCD, FIERCE, DCK, NETWORLD, META_ENG, AWS_NET, GCP, AZURE, CLOUDFLARE, NEXTPLATFORM, REGISTER, OPENAI_BLOG],
   },
   {
