@@ -152,8 +152,13 @@ export const BUCKETS = [
       "rdma", "roce", "ultra ethernet", "uec", "infiniband", "nvlink", "ualink",
       "cxl", "ietf", "ieee 802", "consortium", "protocol", "congestion control",
       "load balanc", "topology",
+      // OpenAI's Multipath Reliable Connection transport for its supercomputer fabric.
+      "multipath reliable connection", "mrc", "multipath transport",
     ],
-    query: "RDMA OR RoCE OR Ultra Ethernet Consortium OR InfiniBand OR NVLink standards",
+    query: [
+      "RDMA OR RoCE OR Ultra Ethernet Consortium OR InfiniBand OR NVLink standards",
+      '"Multipath Reliable Connection" OR "MRC protocol" OR "multipath transport" AI networking',
+    ],
     feeds: [META_ENG, AWS_NET, NETFLIX_ENG, OCP, ETHERNET_ALLIANCE, DCD, NETWORLD, NEXTPLATFORM, STH, OPENAI_BLOG],
   },
 ];
