@@ -595,7 +595,7 @@ function dayOf(s) {
 }
 
 const byId = (id) => stories.find((s) => String(s.id) === String(id));
-const beatLabel = (id) => (id === "ai_industry" ? "AI infra" : BUCKETS.find((b) => b.id === id)?.label || "");
+const beatLabel = (id) => (id === "ai_industry" ? "AI & Neoclouds" : BUCKETS.find((b) => b.id === id)?.label || "");
 
 function unreadCount(bucketId) {
   return stories.filter((s) =>
