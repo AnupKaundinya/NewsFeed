@@ -7,7 +7,8 @@
   ],
   "functions": {
     "api/refresh.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "api/_lib/profile-vectors.json"
     },
     "api/submit.js": {
       "maxDuration": 30
