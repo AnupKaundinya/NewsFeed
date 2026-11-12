@@ -18,6 +18,9 @@
     },
     "api/feedback.js": {
       "maxDuration": 15
+    },
+    "api/invites.js": {
+      "maxDuration": 15
     }
   }
 }

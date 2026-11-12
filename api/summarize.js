@@ -1,4 +1,4 @@
-import { supabase, llm, stripHtml } from "./_lib/util.js";
+import { supabase, llm, stripHtml, authorize } from "./_lib/util.js";
 
 // Long summaries are generated on first expand, not at refresh time — most
 // stories are never opened, so this is where the token savings come from.
@@ -6,10 +6,7 @@ import { supabase, llm, stripHtml } from "./_lib/util.js";
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const expected = process.env.REFRESH_SECRET;
-  if (expected && req.headers["x-refresh-secret"] !== expected) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  if (!(await authorize(req, res))) return;
 
   const { story_id } = req.body || {};
   if (!story_id) return res.status(400).json({ ok: false, error: "story_id is required" });

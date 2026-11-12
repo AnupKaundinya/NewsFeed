@@ -311,6 +311,31 @@
   .note.err{color:var(--danger);}
   .form-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
 
+  /* ---------- sign-in and account ---------- */
+  body.signed-out .topbar,body.signed-out .page,body.booting .topbar,body.booting .page{display:none;}
+  .signin{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px 16px;}
+  body.signed-out .signin{display:flex;}
+  .signin-card{
+    width:min(400px, 100%);border:1px solid var(--border);border-radius:18px;background:var(--surface);
+    box-shadow:var(--shadow-lg);
+  }
+  .signin-card .brand{pointer-events:none;margin-bottom:2px;}
+  .avatar{font-size:14px;font-weight:700;color:var(--text);}
+  .account-email{font-size:15px;font-weight:600;color:var(--text);overflow-wrap:anywhere;}
+  .people{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--border);}
+  .people[hidden]{display:none;}
+  .people h3{font-size:15px;font-weight:700;}
+  .invite-row{display:flex;gap:8px;}
+  .invite-row .input{flex:1;min-width:0;}
+  .check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);}
+  .people-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:240px;overflow:auto;}
+  .person{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);}
+  .person:first-child{border-top:0;}
+  .person-text{flex:1;min-width:0;}
+  .person-email{font-size:14px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .person-status{font-size:12px;color:var(--muted);}
+  .person .btn{min-height:30px;padding:0 10px;font-size:13px;}
+
   /* ---------- tablet ---------- */
   @media (max-width: 960px){
     .front{grid-template-columns:minmax(0,1fr);}
@@ -360,10 +385,25 @@
   }
 </style>
 </head>
-<body>
+<body class="booting">
 
 <div class="progress" id="progress-track"><div class="fill" id="progress-fill"></div></div>
 <div class="pull" id="pull"><span>Release to refresh</span></div>
+
+<section class="signin" id="signin" aria-labelledby="signin-title">
+  <form class="add-form signin-card" id="signin-form">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">N</span>NewsFeed</div>
+    <h2 id="signin-title">Sign in</h2>
+    <p class="note">Invite only. Enter your email and we'll send you a sign-in link.</p>
+    <label class="field">Email
+      <input class="input" id="signin-email" type="email" autocomplete="email" required>
+    </label>
+    <div class="note" id="signin-status" role="status"></div>
+    <div class="form-btns">
+      <button class="btn primary" type="submit" id="signin-go">Email me a link</button>
+    </div>
+  </form>
+</section>
 
 <header class="topbar">
   <div class="bar">
@@ -375,6 +415,7 @@
     </label>
     <button class="icon-btn search-toggle" id="search-toggle" aria-label="Search" aria-expanded="false"></button>
     <button class="icon-btn js-refresh" aria-label="Refresh" title="Refresh"></button>
+    <button class="icon-btn avatar js-account" aria-label="Account" title="Account"></button>
     <button class="btn add-btn js-add" aria-label="Add a story it missed" title="Add a story it missed"><span class="js-plus-icon"></span><span class="btn-label">Add story</span></button>
   </div>
   <label class="search phone-search" id="phone-search">
@@ -412,7 +453,7 @@
     <label class="field">Note (optional)
       <input class="input" id="submit-note" type="text">
     </label>
-    <div class="note" id="submit-status">The source becomes trusted and shapes future picks.</div>
+    <div class="note" id="submit-status"></div>
     <div class="form-btns">
       <button class="btn" value="cancel">Close</button>
       <button class="btn primary" type="button" id="submit-go">Add story</button>
@@ -420,16 +461,28 @@
   </form>
 </dialog>
 
-<dialog id="key-dialog" aria-labelledby="key-title">
+<dialog id="account-dialog" aria-labelledby="account-title">
   <form class="add-form" method="dialog">
-    <h2 id="key-title">Enter your access key</h2>
-    <p class="note">Refreshing, summaries and feedback need the <code>REFRESH_SECRET</code> set in Vercel. It's saved in this browser only.</p>
-    <label class="field">Access key
-      <input class="input" id="key-input" type="password" autocomplete="current-password">
-    </label>
+    <h2 id="account-title">Account</h2>
+    <div>
+      <div class="note">Signed in as</div>
+      <div class="account-email" id="account-email"></div>
+    </div>
+    <p class="note" id="account-role"></p>
+    <section class="people" id="people" aria-labelledby="people-title" hidden>
+      <h3 id="people-title">People</h3>
+      <div class="invite-row">
+        <label class="sr" for="invite-email">Email to invite</label>
+        <input class="input" id="invite-email" type="email" placeholder="name@example.com" autocomplete="off">
+        <button class="btn primary" type="button" id="invite-go">Invite</button>
+      </div>
+      <label class="check"><input type="checkbox" id="invite-send" checked> Email them a sign-in link</label>
+      <div class="note" id="invite-status" role="status"></div>
+      <ul class="people-list" id="people-list"></ul>
+    </section>
     <div class="form-btns">
-      <button class="btn" value="cancel">Not now</button>
-      <button class="btn primary" value="save">Save</button>
+      <button class="btn" value="cancel">Close</button>
+      <button class="btn primary" type="button" id="sign-out">Sign out</button>
     </div>
   </form>
 </dialog>
@@ -441,9 +494,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = "https://lbkvvpikphwzquuavwzf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxia3Z2cGlrcGh3enF1dWF2d3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjIzNTIsImV4cCI6MjEwMzg5ODM1Mn0.yP-WPFUVAXJGaOxqRw6gDmrEjoo2eW4X78E7tvTvDuY";
 // --------------------------------------
-// The refresh secret never ships in the page: it's asked for on first use
-// and kept in this browser only.
-const SECRET_KEY = "backbone:refreshSecret";
+// The anon key is public by design; row-level security plus sign-in decide
+// what anyone can read or change.
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -477,9 +529,11 @@ const BEAT_COLORS = {
 };
 
 const STALE_HOURS = 20;
-const LAST_REFRESH_KEY = "backbone:lastRefreshAt";   // internal key — name kept so existing timestamps survive
 
 let stories = [];
+let session = null;
+let isAdmin = false;
+let lastRefreshAt = 0;    // shared across everyone, from app_meta
 let activeBucket = "all";
 let activeChip = "all";   // "all", "unread", or a tag
 let query = "";
@@ -513,8 +567,12 @@ const submitNote = document.getElementById("submit-note");
 const submitGo = document.getElementById("submit-go");
 const submitStatus = document.getElementById("submit-status");
 const pullEl = document.getElementById("pull");
-const keyDialog = document.getElementById("key-dialog");
-const keyInput = document.getElementById("key-input");
+const accountDialog = document.getElementById("account-dialog");
+const accountBtn = document.querySelector(".js-account");
+const signinForm = document.getElementById("signin-form");
+const signinEmail = document.getElementById("signin-email");
+const signinStatus = document.getElementById("signin-status");
+const signinGo = document.getElementById("signin-go");
 
 const svg = (body, { fill = false, w = 2 } = {}) =>
   `<svg viewBox="0 0 24 24" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
@@ -536,58 +594,30 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-function readSecret() {
-  try { return localStorage.getItem(SECRET_KEY) || ""; } catch { return ""; }
-}
-
 function apiHeaders() {
   const h = { "Content-Type": "application/json" };
-  const secret = readSecret();
-  if (secret) h["x-refresh-secret"] = secret;
+  if (session?.access_token) h.Authorization = `Bearer ${session.access_token}`;
   return h;
 }
 
-// One prompt at a time, however many calls hit a 401 together.
-let secretPrompt = null;
-function askForSecret() {
-  if (secretPrompt) return secretPrompt;
-  secretPrompt = new Promise((resolve) => {
-    const form = keyDialog.querySelector("form");
-    // Settle from the submit itself (it names the button pressed); Esc and
-    // close are fallbacks for dismissing without a button.
-    const finish = (save) => {
-      form.removeEventListener("submit", onSubmit);
-      keyDialog.removeEventListener("cancel", onDismiss);
-      keyDialog.removeEventListener("close", onDismiss);
-      const value = keyInput.value.trim();
-      const saved = Boolean(save && value);
-      if (saved) {
-        try { localStorage.setItem(SECRET_KEY, value); } catch {}
-      }
-      secretPrompt = null;
-      resolve(saved);
-    };
-    const onSubmit = (e) => finish(e.submitter?.value === "save");
-    const onDismiss = () => finish(false);
-    form.addEventListener("submit", onSubmit);
-    keyDialog.addEventListener("cancel", onDismiss);
-    keyDialog.addEventListener("close", onDismiss);
-    keyInput.value = "";
-    keyDialog.showModal();
-    keyInput.focus();
-  });
-  return secretPrompt;
-}
-
-// POST to our API. A 401 means the key is missing or wrong: ask, then retry once.
-async function apiPost(path, body) {
-  const send = () => fetch(path, {
-    method: "POST", headers: apiHeaders(),
+// Call our API as the signed-in person. A 401 means the session lapsed.
+async function apiCall(method, path, body) {
+  const res = await fetch(path, {
+    method, headers: apiHeaders(),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const res = await send();
-  if (res.status === 401 && await askForSecret()) return send();
+  if (res.status === 401) showSignIn("Your session ended — sign in again.");
   return res;
+}
+const apiPost = (path, body) => apiCall("POST", path, body);
+
+// Read / saved / hidden belong to each person, one story_state row per story.
+async function saveState(story, fields) {
+  const { error } = await supabase.from("story_state").upsert(
+    { user_id: session.user.id, story_id: story.id, ...fields, updated_at: new Date().toISOString() },
+    { onConflict: "user_id,story_id" }
+  );
+  return error;
 }
 
 function dayOf(s) {
@@ -939,7 +969,7 @@ function renderReader() {
     <div class="drawer-foot">
       <a class="btn primary" href="${esc(s.url)}" target="_blank" rel="noopener"><span class="btn-text">Read on ${esc(s.source)}</span>${ICONS.external}</a>
       <button class="btn js-save${s.saved ? " saved" : ""}" aria-pressed="${s.saved}" aria-label="${s.saved ? "Remove from saved" : "Save story"}">${s.saved ? ICONS.bookmarkFill : ICONS.bookmark}<span class="btn-label">${s.saved ? "Saved" : "Save"}</span></button>
-      <button class="btn ghost js-dismiss" title="Show me less like this">${s.dismissed ? "Undo" : "Not relevant"}</button>
+      <button class="btn ghost js-dismiss" title="${isAdmin ? "Hide it and show less like this" : "Hide this story for you"}">${s.dismissed ? "Undo" : isAdmin ? "Not relevant" : "Hide"}</button>
     </div>`;
 }
 
@@ -1002,7 +1032,7 @@ async function ensureSummary(story) {
 
 async function markRead(story) {
   story.is_read = true;
-  const { error } = await supabase.rpc("mark_story_read", { story_id: story.id });
+  const error = await saveState(story, { is_read: true });
   if (error) console.error("Failed to mark read:", error);
 }
 
@@ -1012,7 +1042,7 @@ async function toggleSaved(story) {
   story.saved_at = next ? new Date().toISOString() : null;
   render();
 
-  const { error } = await supabase.rpc("set_story_saved", { story_id: story.id, value: next });
+  const error = await saveState(story, { saved: next, saved_at: story.saved_at });
   if (error) {
     console.error("Failed to save:", error);
     story.saved = !next;
@@ -1035,25 +1065,40 @@ async function toggleDismissed(story) {
   }
 }
 
+const STATE_FIELDS = ["is_read", "saved", "saved_at", "dismissed"];
+
 async function loadStories() {
-  const { data, error } = await supabase
-    .from("stories")
-    .select("*")
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
+  const [storyRes, stateRes, metaRes] = await Promise.all([
+    supabase
+      .from("stories")
+      .select("*")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }),
+    supabase.from("story_state").select("story_id, is_read, saved, saved_at, dismissed"),
+    supabase.from("app_meta").select("value").eq("key", "last_refresh").maybeSingle(),
+  ]);
+  const error = storyRes.error || stateRes.error;
 
   if (error) {
-    feedEl.innerHTML = '<div class="empty">Couldn\'t load stories — check the Supabase keys in index.html.</div>';
+    feedEl.innerHTML = '<div class="empty">Couldn\'t load stories. Try reloading the page.</div>';
     console.error(error);
     return;
   }
 
-  stories = data || [];
+  // The stories table still carries the old shared columns; this person's own
+  // state replaces them.
+  const mine = new Map((stateRes.data || []).map((r) => [r.story_id, r]));
+  stories = (storyRes.data || []).map((s) => {
+    const st = mine.get(s.id) || {};
+    const out = { ...s };
+    for (const f of STATE_FIELDS) out[f] = f === "saved_at" ? st[f] || null : !!st[f];
+    return out;
+  });
+  lastRefreshAt = Date.parse(metaRes.data?.value || "") || 0;
   render();
 
-  const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
-  if (last) {
-    stampEl.textContent = "Checked " + new Date(last).toLocaleString(undefined, {
+  if (lastRefreshAt) {
+    stampEl.textContent = "Checked " + new Date(lastRefreshAt).toLocaleString(undefined, {
       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
     });
   } else if (stories.length) {
@@ -1103,7 +1148,6 @@ async function triggerRefresh() {
       cursor = result.done ? null : result.next;
     }
 
-    localStorage.setItem(LAST_REFRESH_KEY, String(Date.now()));
     refreshStatus = inserted ? `${inserted} new ${inserted === 1 ? "story" : "stories"}` : "Nothing new";
     if (problems.length) {
       console.warn("Feeds failing or returning nothing:", problems);
@@ -1141,8 +1185,8 @@ async function submitStory() {
     if (!res.ok || !result.ok) throw new Error(result.error || "Submit failed");
 
     submitStatus.textContent = result.already_present
-      ? "Already in your feed — recorded as a preference."
-      : `Added.${result.warning ? " " + result.warning + "." : ""} This source is now trusted.`;
+      ? (result.learned ? "Already in the feed — recorded as a preference." : "Already in the feed.")
+      : `Added for everyone.${result.warning ? " " + result.warning + "." : ""}${result.learned ? " This source is now trusted." : ""}`;
     submitUrl.value = "";
     submitNote.value = "";
     await loadStories();
@@ -1155,9 +1199,13 @@ async function submitStory() {
   }
 }
 
+const addHint = () => isAdmin
+  ? "Adds it for everyone. The source becomes trusted and shapes future picks."
+  : "Adds it to the shared feed for everyone.";
+
 function openAdd() {
   submitStatus.classList.remove("err");
-  submitStatus.textContent = "The source becomes trusted and shapes future picks.";
+  submitStatus.textContent = addHint();
   if (activeBucket !== "all" && activeBucket !== "saved") submitBucket.value = activeBucket;
   addDialog.showModal();
   submitUrl.focus();
@@ -1220,7 +1268,7 @@ scrimEl.addEventListener("click", dismissDrawer);
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape" || openId === null) return;
-  if (addDialog.open || keyDialog.open) return;
+  if (addDialog.open || accountDialog.open) return;
   e.preventDefault();
   dismissDrawer();
 });
@@ -1268,13 +1316,165 @@ window.addEventListener("touchend", () => {
 // A reload with a story entry in history would leave Back pointing nowhere.
 if (history.state?.story !== undefined) history.replaceState(null, "");
 
-await loadStories();
+// --- sign-in ---------------------------------------------------------------
+accountBtn.addEventListener("click", () => {
+  accountDialog.showModal();
+  if (isAdmin) loadPeople();
+});
 
-// Hobby crons fire once a day and can't finish the whole loop, so the page
-// keeps itself current when you open it. Without a key, wait for a manual
-// refresh rather than greeting every visitor with a prompt.
-const last = Number(localStorage.getItem(LAST_REFRESH_KEY) || 0);
-if (readSecret() && Date.now() - last > STALE_HOURS * 3600 * 1000) triggerRefresh();
+// --- people (admin only; the API refuses anyone else) -----------------------
+const peopleEl = document.getElementById("people");
+const peopleList = document.getElementById("people-list");
+const inviteEmail = document.getElementById("invite-email");
+const inviteSend = document.getElementById("invite-send");
+const inviteGo = document.getElementById("invite-go");
+const inviteStatus = document.getElementById("invite-status");
+
+function setInviteStatus(text, err = false) {
+  inviteStatus.textContent = text;
+  inviteStatus.classList.toggle("err", err);
+}
+
+function personStatus(p) {
+  if (p.is_admin) return "Admin";
+  if (p.signed_in_at) return "Last signed in " + new Date(p.signed_in_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return p.has_account ? "Invite sent, not signed in yet" : "Not signed in yet";
+}
+
+async function loadPeople() {
+  peopleList.innerHTML = '<li class="note">Loading…</li>';
+  try {
+    const res = await apiCall("GET", "/api/invites");
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Couldn't load people");
+    peopleList.innerHTML = result.people.map((p) => `
+      <li class="person">
+        <div class="person-text">
+          <div class="person-email" title="${esc(p.email)}">${esc(p.email)}</div>
+          <div class="person-status">${esc(personStatus(p))}</div>
+        </div>
+        ${p.is_admin ? "" : `<button class="btn ghost" type="button" data-remove="${esc(p.email)}">Remove</button>`}
+      </li>`).join("");
+  } catch (err) {
+    peopleList.innerHTML = "";
+    setInviteStatus(String(err.message || err), true);
+  }
+}
+
+async function invite() {
+  const email = inviteEmail.value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setInviteStatus("Enter a valid email address.", true);
+  inviteGo.disabled = true;
+  setInviteStatus("Inviting…");
+  try {
+    const res = await apiCall("POST", "/api/invites", { email, send: inviteSend.checked });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Invite failed");
+    inviteEmail.value = "";
+    setInviteStatus(result.warning || (result.emailed
+      ? `Invited ${email} and emailed them a link.`
+      : `Invited ${email}. They can sign in on this site with that email.`));
+    await loadPeople();
+  } catch (err) {
+    setInviteStatus(String(err.message || err), true);
+  } finally {
+    inviteGo.disabled = false;
+  }
+}
+
+inviteGo.addEventListener("click", invite);
+inviteEmail.addEventListener("keydown", (e) => {
+  // The dialog's form would otherwise submit and close.
+  if (e.key === "Enter") { e.preventDefault(); invite(); }
+});
+peopleList.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-remove]");
+  if (!btn) return;
+  const email = btn.dataset.remove;
+  if (!confirm(`Remove ${email}? They lose access and their read and saved lists are deleted.`)) return;
+  btn.disabled = true;
+  try {
+    const res = await apiCall("DELETE", "/api/invites", { email });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || "Remove failed");
+    setInviteStatus(`Removed ${email}.`);
+    await loadPeople();
+  } catch (err) {
+    btn.disabled = false;
+    setInviteStatus(String(err.message || err), true);
+  }
+});
+document.getElementById("sign-out").addEventListener("click", async () => {
+  accountDialog.close();
+  await supabase.auth.signOut();
+});
+
+function showSignIn(message = "") {
+  session = null;
+  document.body.classList.remove("booting");
+  stories = [];
+  document.body.classList.add("signed-out");
+  if (openId !== null) closeStory();
+  signinStatus.classList.toggle("err", !!message);
+  signinStatus.textContent = message;
+}
+
+signinForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = signinEmail.value.trim().toLowerCase();
+  if (!email) return;
+  signinGo.disabled = true;
+  signinStatus.classList.remove("err");
+  signinStatus.textContent = "Sending…";
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: location.origin + location.pathname },
+  });
+  signinGo.disabled = false;
+  if (error) {
+    // The invite-list trigger refuses unknown emails; Supabase reports it as a database error.
+    const notInvited = /not_invited|database error/i.test(error.message);
+    signinStatus.classList.add("err");
+    signinStatus.textContent = notInvited
+      ? "That email isn't on the invite list. Ask the owner to add you."
+      : error.message;
+    return;
+  }
+  signinStatus.textContent = `Check ${email} for a sign-in link. You can close this tab.`;
+});
+
+let booted = false;
+async function startSession(next) {
+  if (booted && session?.user?.id === next.user.id) { session = next; return; }   // token refresh
+  booted = true;
+  session = next;
+  document.body.classList.remove("signed-out", "booting");
+  const email = session.user.email || "";
+  accountBtn.textContent = (email[0] || "?").toUpperCase();
+  accountBtn.title = `Signed in as ${email}`;
+  document.getElementById("account-email").textContent = email;
+
+  const { data: inviteRow } = await supabase.from("allowed_emails").select("is_admin").maybeSingle();
+  isAdmin = !!inviteRow?.is_admin;
+  peopleEl.hidden = !isAdmin;
+  document.getElementById("account-role").textContent = isAdmin
+    ? "You're the admin: your saves, added stories and “Not relevant” clicks shape what everyone's feed finds."
+    : "Your reads, saves and hidden stories are yours alone.";
+
+  await loadStories();
+
+  // Hobby crons fire once a day and can't finish the whole loop, so the page
+  // keeps the shared feed current when someone opens it.
+  if (Date.now() - lastRefreshAt > STALE_HOURS * 3600 * 1000) triggerRefresh();
+}
+
+supabase.auth.onAuthStateChange((event, next) => {
+  // Supabase calls back inside its own lock; run our queries after it.
+  setTimeout(() => {
+    if (next) startSession(next);
+    else if (event === "SIGNED_OUT" || event === "INITIAL_SESSION") { booted = false; showSignIn(); }
+  }, 0);
+});
 </script>
 </body>
 </html>

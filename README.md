@@ -65,7 +65,8 @@ in Hobby's function limits.
 <details>
 <summary><b>Running it yourself</b></summary>
 
-**1.** Create a Supabase project and run `migration.sql` in the SQL Editor.
+**1.** Create a Supabase project. In `migration.sql`, change `you@example.com`
+(section 7) to your own email, then run the file in the SQL Editor.
 
 **2.** Get a free API key from [console.groq.com](https://console.groq.com).
 
@@ -74,19 +75,40 @@ in Hobby's function limits.
 | Variable | Where it comes from |
 | --- | --- |
 | `SUPABASE_URL` | Supabase → Project Settings → API |
-| `SUPABASE_SERVICE_KEY` | same page, the `service_role` key |
-| `GROQ_API_KEY` | console.groq.com |
+| `SUPABASE_SERVICE_ROLE_KEY` | same page, the `service_role` key |
+| `LLM_API_KEY` | console.groq.com |
 | `LLM_MODEL` | `openai/gpt-oss-20b` |
-| `REFRESH_SECRET` | any random string |
+| `REFRESH_SECRET` | any random string (for the cron and preview/backfill URLs) |
 | `GEMINI_API_KEY` | aistudio.google.com → Get API key (embeddings for relevance) |
 
 **4.** Fill in `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of the script
-in `public/index.html`. The anon key is public by design; `REFRESH_SECRET` is
-not, so it stays out of the page.
+in `public/index.html`. The anon key is public by design; sign-in and
+row-level security decide what anyone can read or change.
 
-Deploy. The first time you refresh, the page asks for `REFRESH_SECRET` and keeps
-it in that browser. After that it refreshes itself on open if the last run was
-over 20 hours ago.
+**5.** In Supabase → Authentication → URL Configuration, set the Site URL to
+your Vercel URL and add it (plus `http://127.0.0.1:*` for local testing) to the
+redirect URLs.
+
+**6.** Supabase's built-in email only delivers sign-in links to members of your
+Supabase team, a few an hour. To let anyone else sign in, connect your own
+email sender under Authentication → Emails → SMTP Settings (Resend's free
+tier works).
+
+Deploy and sign in with your email. Your first sign-in inherits the read and
+saved state stored so far. The page refreshes the shared feed on open if the
+last full run, by anyone, was over 20 hours ago.
+
+**Inviting people** — only emails on the invite list can sign in. As the admin,
+open the account button (your initial, top right) → People: type an email and
+press Invite. Tick "Email them a sign-in link" to send one (needs the email
+sender from step 6); otherwise just tell them the site URL. The list shows who
+has signed in, and Remove takes away access and deletes their read and saved
+lists. (The same list lives in the `allowed_emails` table if you prefer SQL.)
+
+Everyone shares one feed but has their own read, saved and hidden stories.
+Only the admin (`is_admin`) trains it: the admin's saves, added stories and
+"Not relevant" clicks shape what the refresh finds. For everyone else the
+button says "Hide" and only hides the story for them.
 
 **Backfill** — a normal refresh looks back 5 days. To reach further:
 
@@ -104,7 +126,8 @@ api/
   refresh.js      fetch, filter, select
   summarize.js    on-demand summaries
   submit.js       manual story submission
-  feedback.js     records dismissals
+  feedback.js     hides a story; the admin's also train
+  invites.js      the admin's People panel: invite, list, remove
   _lib/
     sources.js    feeds and keywords per beat
     util.js       Groq client, RSS parsing, helpers

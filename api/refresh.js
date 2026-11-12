@@ -3,6 +3,7 @@ import { keywordMatcher, rankByRelevance } from "./_lib/relevance.js";
 import {
   supabase, llm, parseJsonish, readFeed, dedupeKey, domainOf,
   pacificToday, significantTerms, titleOverlap,
+  authorize,
 } from "./_lib/util.js";
 
 const CHUNK = 1;              // one beat per invocation — spreads calls out under the free-tier ceiling
@@ -12,7 +13,8 @@ const DAILY_WINDOW = 5;       // days back for a normal refresh
 const BACKFILL_WINDOW = 21;   // RSS rarely holds more than ~2-3 weeks
 
 // ---------------------------------------------------------------------------
-// Learning: read the signals table once per invocation.
+// Learning: read the signals table once per invocation. Only the admin's
+// feedback is ever recorded there, so it's the admin who shapes the feed.
 // ---------------------------------------------------------------------------
 async function loadLearning() {
   const { data, error } = await supabase
@@ -54,14 +56,22 @@ async function loadLearning() {
   }
 
   // Saved stories are the clearest "more like this" signal there is.
-  const { data: saved, error: savedError } = await supabase
-    .from("stories")
-    .select("bucket, headline")
-    .eq("saved", true)
-    .order("saved_at", { ascending: false, nullsFirst: false })
-    .limit(100);
+  // Only the admin's saves teach; everyone else's are just their own bookmarks.
+  const { data: adminIds, error: adminError } = await supabase.rpc("admin_user_ids");
+  if (adminError) console.warn(`admin lookup failed: ${adminError.message}`);
+  const admins = (adminIds || []).map((r) => r.id ?? r);
+  const { data: savedRows, error: savedError } = admins.length
+    ? await supabase
+      .from("story_state")
+      .select("saved_at, stories(bucket, headline)")
+      .eq("saved", true)
+      .in("user_id", admins)
+      .order("saved_at", { ascending: false, nullsFirst: false })
+      .limit(100)
+    : { data: [], error: null };
   if (savedError) console.warn(`saved stories read failed: ${savedError.message}`);
-  for (const s of saved || []) {
+  const saved = (savedRows || []).map((r) => r.stories).filter(Boolean);
+  for (const s of saved) {
     if (s.bucket && s.headline && sig(s.bucket).liked.length < 20) sig(s.bucket).liked.push(s.headline);
   }
 
@@ -274,13 +284,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const expected = process.env.REFRESH_SECRET;
-  if (expected) {
-    const bearerOk = req.headers["authorization"] === `Bearer ${expected}`;
-    if (req.headers["x-refresh-secret"] !== expected && !bearerOk && req.query?.secret !== expected) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-  }
+  // Any invited person can refresh; preview and backfill are for the admin or the secret.
+  const special = req.query?.mode === "preview" || req.query?.mode === "backfill";
+  if (!(await authorize(req, res, { adminOnly: special }))) return;
 
   try {
     const backfill = req.query?.mode === "backfill";
@@ -407,6 +413,13 @@ export default async function handler(req, res) {
 
     const next = cursor + CHUNK;
     const done = next >= BUCKETS.length;
+
+    // Shared "last refreshed" stamp, so every reader's page knows the feed is current.
+    if (done) {
+      const { error: metaErr } = await supabase.from("app_meta")
+        .upsert({ key: "last_refresh", value: new Date().toISOString(), updated_at: new Date().toISOString() });
+      if (metaErr) console.warn(`last_refresh stamp failed: ${metaErr.message}`);
+    }
 
     return res.status(200).json({
       ok: true,
