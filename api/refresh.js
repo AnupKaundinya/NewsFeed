@@ -1,4 +1,5 @@
-import { BUCKETS, BLOCKED_DOMAINS, REJECT_PATTERNS, TAGS, gnews } from "./_lib/sources.js";
+import { BUCKETS, BLOCKED_DOMAINS, REJECT_PATTERNS, TAGS, ANTI_PROFILE, gnews } from "./_lib/sources.js";
+import { keywordMatcher, rankByRelevance } from "./_lib/relevance.js";
 import {
   supabase, llm, parseJsonish, readFeed, dedupeKey, domainOf,
   pacificToday, significantTerms, titleOverlap,
@@ -26,7 +27,12 @@ async function loadLearning() {
   const trustedDomains = new Map();   // domain -> boost
   const badDomains = new Map();       // domain -> penalty
   const learnedTerms = new Map();     // bucket -> Set(term)
-  const examples = new Map();         // bucket -> { liked: [], disliked: [] }
+  const examples = new Map();         // bucket -> { liked: [], disliked: [] } — a few, for the prompt
+  const signals = new Map();          // bucket -> { liked: [], disliked: [] } — more, for embeddings
+  const sig = (b) => {
+    if (!signals.has(b)) signals.set(b, { liked: [], disliked: [] });
+    return signals.get(b);
+  };
 
   for (const s of data || []) {
     const ex = examples.get(s.bucket) || { liked: [], disliked: [] };
@@ -37,22 +43,38 @@ async function loadLearning() {
         significantTerms(s.headline).slice(0, 6).forEach((t) => set.add(t));
         learnedTerms.set(s.bucket, set);
         if (ex.liked.length < 5) ex.liked.push(s.headline);
+        if (sig(s.bucket).liked.length < 20) sig(s.bucket).liked.push(s.headline);
       }
     } else if (s.kind === "dismiss") {
       if (s.domain) badDomains.set(s.domain, (badDomains.get(s.domain) || 0) + 1);
       if (s.headline && ex.disliked.length < 5) ex.disliked.push(s.headline);
+      if (s.bucket && s.headline && sig(s.bucket).disliked.length < 20) sig(s.bucket).disliked.push(s.headline);
     }
     if (s.bucket) examples.set(s.bucket, ex);
   }
 
-  return { trustedDomains, badDomains, learnedTerms, examples, degraded: !!error };
+  // Saved stories are the clearest "more like this" signal there is.
+  const { data: saved, error: savedError } = await supabase
+    .from("stories")
+    .select("bucket, headline")
+    .eq("saved", true)
+    .order("saved_at", { ascending: false, nullsFirst: false })
+    .limit(100);
+  if (savedError) console.warn(`saved stories read failed: ${savedError.message}`);
+  for (const s of saved || []) {
+    if (s.bucket && s.headline && sig(s.bucket).liked.length < 20) sig(s.bucket).liked.push(s.headline);
+  }
+
+  return { trustedDomains, badDomains, learnedTerms, examples, signals, degraded: !!error };
 }
 
 // ---------------------------------------------------------------------------
 // Gather + mechanically filter a bucket's candidates.
 // ---------------------------------------------------------------------------
 async function gather(bucket, windowDays, learning) {
-  const feeds = [...bucket.feeds, { url: gnews(bucket.query), tier: 3, kind: "press" }];
+  // A beat may list several Google News queries; each is its own tier-3 feed.
+  const queries = [].concat(bucket.query);
+  const feeds = [...bucket.feeds, ...queries.map((q) => ({ url: gnews(q), tier: 3, kind: "press" }))];
   const results = await Promise.all(feeds.map(readFeed));
 
   const health = results.map((r) => ({
@@ -63,7 +85,8 @@ async function gather(bucket, windowDays, learning) {
   }));
 
   const learned = learning.learnedTerms.get(bucket.id) || new Set();
-  const keywords = [...bucket.keywords, ...learned];
+  // Learned terms are stems ("switch" from "switches"), so they match as prefixes.
+  const isHit = keywordMatcher([...bucket.keywords, ...[...learned].map((t) => `${t}*`)]);
   const cutoff = Date.now() - windowDays * 86400000;
 
   const seen = new Set();
@@ -87,12 +110,10 @@ async function gather(bucket, windowDays, learning) {
       if (t < cutoff || t > Date.now() + 2 * 86400000) continue;
     }
 
-    // topical relevance
-    const hay = `${item.title} ${item.body}`.toLowerCase();
-    if (!keywords.some((k) => hay.includes(k))) continue;
-
+    // Keywords no longer gate: relevance is judged by meaning later
+    // (api/_lib/relevance.js). A hit still counts, and is the fallback filter.
     seen.add(item.url);
-    kept.push({ ...item, strikes });
+    kept.push({ ...item, strikes, kwHit: isHit(`${item.title} ${item.body}`) });
   }
 
   return { candidates: kept, health };
@@ -113,6 +134,15 @@ function scoreCandidates(candidates, learning) {
 
     c.score = tierScore + c.corroboration * 3 + trust + recency - c.strikes * 2;
   }
+  // Relevance (from embeddings) is worth up to 6 points, scaled within this batch.
+  const rels = candidates.map((c) => c.relevance).filter((r) => typeof r === "number");
+  if (rels.length) {
+    const lo = Math.min(...rels);
+    const span = Math.max(...rels) - lo || 1;
+    for (const c of candidates) {
+      if (typeof c.relevance === "number") c.score += 6 * ((c.relevance - lo) / span);
+    }
+  }
   return candidates.sort((a, b) => b.score - a.score);
 }
 
@@ -124,7 +154,7 @@ function scoreCandidates(candidates, learning) {
 const stem = (t) => t.replace(/(es|s)$/, "");
 
 function beatTerms(bucket) {
-  return new Set(significantTerms([bucket.label, bucket.query, ...bucket.keywords].join(" ")).map(stem));
+  return new Set(significantTerms([bucket.label, ...[].concat(bucket.query), ...bucket.keywords].join(" ")).map(stem));
 }
 
 function sameStory(a, b, common) {
@@ -167,7 +197,23 @@ Topic: "${bucket.label}".
 You are given real articles already collected from RSS feeds. Do NOT invent articles, facts, or URLs.
 Work only from the title and snippet provided.
 
-First, check relevance: an item earns a place only if it is actually about data center
+Scope: this reader cares about the data center — the networks, silicon, systems, facilities and
+companies that build and run data centers and AI clusters.
+In scope:
+- data center switching, routing, fabrics, optics and interconnect (including DCI); GPU/AI cluster networking
+- switch, NIC, DPU and optical silicon; servers and rack-scale systems built for data centers
+- hyperscalers, neoclouds and GPU clouds (CoreWeave, Crusoe, Vultr, Lambda, Nebius, Nscale, Together AI,
+  Fluidstack and similar), colocation providers (Equinix, Digital Realty and similar): their builds,
+  capacity, funding, deals, power and cooling
+- standards and protocols for data center and AI networking
+Out of scope, even when the vendor belongs to this beat:
+- enterprise campus, branch and office networking: wired or wireless LAN, Wi-Fi, SD-WAN, SASE, retail or
+  remote-site networking. (A "data center campus", meaning a site of several data center buildings, is in scope.)
+- security products, collaboration and contact-center software, observability/Splunk, certifications and
+  training, customer events, keynotes and webinars — unless the story is specifically about data center infrastructure
+- telecom/5G/mobile, consumer tech, satellite broadband, AI model or app news, stock and analyst commentary
+
+First, check relevance: an item earns a place only if it is in scope above and actually about data center
 infrastructure, networking hardware/software, or this beat's ecosystem specifically — not just AI,
 compute, or energy in general. A keyword match alone does not make something relevant. If the item
 only mentions this beat in passing, or is a broader AI/tech/energy story without a data-center-specific
@@ -238,6 +284,8 @@ export default async function handler(req, res) {
 
   try {
     const backfill = req.query?.mode === "backfill";
+    // Preview: score one beat's candidates and return the numbers. No model call, nothing stored.
+    const preview = req.query?.mode === "preview";
     const windowDays = backfill ? BACKFILL_WINDOW : DAILY_WINDOW;
     const perBucket = backfill ? 8 : PER_BUCKET;
 
@@ -259,13 +307,15 @@ export default async function handler(req, res) {
       // Drop anything already stored BEFORE spending tokens on it.
       const keys = candidates.map((c) => dedupeKey(bucket.id, c.url));
       let known = new Set();
-      if (keys.length) {
+      // Chunked: without the keyword gate there can be a few hundred keys,
+      // and they travel in the request URL.
+      for (let i = 0; i < keys.length; i += 80) {
         const { data, error } = await supabase
           .from("stories")
           .select("dedupe_key")
-          .in("dedupe_key", keys);
+          .in("dedupe_key", keys.slice(i, i + 80));
         if (error) throw new Error(`dedupe check failed: ${error.message}`);
-        known = new Set((data || []).map((d) => d.dedupe_key));
+        (data || []).forEach((d) => known.add(d.dedupe_key));
       }
       // ...and anything covering an event this beat already stored recently.
       const since = new Date(Date.now() - BACKFILL_WINDOW * 86400000).toISOString();
@@ -279,10 +329,31 @@ export default async function handler(req, res) {
       const common = beatTerms(bucket);
       const isRepeat = (title) => storedHeadlines.some((h) => sameStory(title, h, common));
 
-      const fresh = candidates.filter((c) => !known.has(dedupeKey(bucket.id, c.url)) && !isRepeat(c.title));
+      const unseen = candidates.filter((c) => !known.has(dedupeKey(bucket.id, c.url)) && !isRepeat(c.title));
+
+      // Keep only what's about this beat, by meaning (or whole-word keywords as a fallback).
+      const sig = learning.signals.get(bucket.id) || { liked: [], disliked: [] };
+      const relevance = await rankByRelevance(bucket, unseen, { ...sig, antiProfile: ANTI_PROFILE, beats: BUCKETS });
+      const fresh = relevance.kept;
+
+      if (preview) {
+        report.push({
+          bucket: bucket.id,
+          relevance_mode: relevance.mode,
+          ...(relevance.error ? { relevance_error: relevance.error } : {}),
+          candidates: candidates.length,
+          unseen: unseen.length,
+          kept: fresh.length,
+          scored: relevance.scored.sort((a, b) => (b.rel ?? 0) - (a.rel ?? 0)),
+        });
+        continue;
+      }
 
       if (!fresh.length) {
-        report.push({ bucket: bucket.id, candidates: candidates.length, new: 0, kept: 0, llm_calls: 0 });
+        report.push({
+          bucket: bucket.id, candidates: candidates.length, new: 0, kept: 0, llm_calls: 0,
+          relevance_mode: relevance.mode,
+        });
         continue;
       }
 
@@ -315,7 +386,13 @@ export default async function handler(req, res) {
         new: fresh.length,
         kept: stories.length,
         llm_calls: llmCalls,
+        relevance_mode: relevance.mode,
+        ...(relevance.error ? { relevance_error: relevance.error } : {}),
       });
+    }
+
+    if (preview) {
+      return res.status(200).json({ ok: true, mode: "preview", buckets: report });
     }
 
     let inserted = 0;

@@ -35,10 +35,23 @@ as the ledger, which is also why read stories are never deleted.
 **Summaries are lazy.** Writing all 28 upfront would blow the daily token
 budget on stories you'd never open. One call per story, on first click.
 
-**Keywords are an OR gate, not a ranking signal.** A single match makes an item
-a candidate, so the terms have to stay narrow — a broad word like `ethernet`
-matches everything on its beat and stops filtering entirely. Ranking is the
-LLM's job; keywords just cut the input down to something affordable.
+**Relevance is judged by meaning, not keywords.** Every new candidate is
+embedded (Gemini) and compared with its beat's written profile and the stories
+you saved or submitted, and against a shared list of off-topic descriptions
+(campus Wi-Fi, security, events…) and the stories you dismissed. It stays only
+if it sits closer to the first group. Keywords match whole words now and only
+give a small boost — or do the filtering on their own if `GEMINI_API_KEY` is
+missing or the embedding call fails. `/api/refresh?mode=preview&cursor=N`
+returns one beat's scores without calling the LLM or storing anything; set
+`RELEVANCE_MARGIN` to tighten or loosen the cut (default 0.035).
+
+Each beat's profile is a list of short single-topic lines, and a story stays on
+a beat only if that beat is its closest match among all seven — so a generic
+data center build lands on the AI beat, not on HPE. Those fixed lines are
+embedded once into `api/_lib/profile-vectors.json`; after editing them, rerun
+`GEMINI_API_KEY=… node scripts/embed-profiles.mjs`. Gemini's free tier allows
+100 embeddings a minute, so a beat embeds at most ~50 texts and the page starts
+beats 30 seconds apart: a full refresh takes about three and a half minutes.
 
 ## Stack
 
@@ -65,6 +78,7 @@ in Hobby's function limits.
 | `GROQ_API_KEY` | console.groq.com |
 | `LLM_MODEL` | `openai/gpt-oss-20b` |
 | `REFRESH_SECRET` | any random string |
+| `GEMINI_API_KEY` | aistudio.google.com → Get API key (embeddings for relevance) |
 
 **4.** Fill in `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of the script
 in `public/index.html`. The anon key is public by design; `REFRESH_SECRET` is
