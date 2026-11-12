@@ -169,6 +169,9 @@
   .page-title{font-size:30px;font-weight:700;letter-spacing:-.025em;line-height:1.15;}
   .page-sub{margin-top:4px;font-size:14px;color:var(--muted);}
   .stamp{font-size:12.5px;color:var(--muted);}
+  .head-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .markall{min-height:32px;padding:0 12px;font-size:13px;}
+  .markall[hidden]{display:none;}
   .filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;}
   .filters:empty{display:none;}
   #feed{margin-top:24px;}
@@ -441,7 +444,10 @@
       <h1 class="page-title" id="list-title">Top stories</h1>
       <div class="page-sub" id="list-sub"></div>
     </div>
-    <div class="stamp" id="stamp"></div>
+    <div class="head-side">
+      <div class="stamp" id="stamp"></div>
+      <button class="btn markall" type="button" id="mark-all" hidden>Mark all read</button>
+    </div>
   </div>
   <div class="filters" id="tag-chips"></div>
   <div id="feed"></div>
@@ -558,6 +564,9 @@ const BEAT_COLORS = {
 };
 
 const STALE_HOURS = 20;
+// A new account starts with only this many days of stories unread; anything
+// older lands in the read pile instead of a backlog of hundreds.
+const FRESH_START_DAYS = 3;
 
 let stories = [];
 let session = null;
@@ -573,6 +582,7 @@ let openWasRead = false;
 let pileOpen = false;
 let refreshing = false;
 let refreshStatus = "";
+let viewUnread = [];      // unread stories in the current view, for "Mark all read"
 let clusters = [];        // last rendered clusters, so the reader can show full coverage
 
 const tabsEl = document.getElementById("tabs");
@@ -583,6 +593,7 @@ const feedEl = document.getElementById("feed");
 const readerEl = document.getElementById("reader");
 const scrimEl = document.getElementById("scrim");
 const stampEl = document.getElementById("stamp");
+const markAllBtn = document.getElementById("mark-all");
 const refreshBtns = document.querySelectorAll(".js-refresh");
 const searchInputs = document.querySelectorAll(".js-search");
 const searchToggle = document.getElementById("search-toggle");
@@ -881,7 +892,11 @@ function renderSaved() {
 
 function renderFeed() {
   renderChips();
-  if (activeBucket === "saved") return renderSaved();
+  if (activeBucket === "saved") {
+    viewUnread = [];
+    markAllBtn.hidden = true;
+    return renderSaved();
+  }
 
   const pinnedUp = (s) => s.id === openId && !openWasRead;
   let list = stories.filter((s) => (activeBucket === "all" || s.bucket === activeBucket) && matchesQuery(s));
@@ -891,7 +906,10 @@ function renderFeed() {
   clusters = clusterStories(list);
   const fresh = clusters.filter((c) => c.items.some((s) => !s.is_read || pinnedUp(s)));
   const read = clusters.filter((c) => !fresh.includes(c));
-  renderHead(list.filter((s) => !s.is_read && !s.dismissed).length, 0);
+  viewUnread = list.filter((s) => !s.is_read && !s.dismissed);
+  markAllBtn.hidden = !viewUnread.length;
+  markAllBtn.textContent = !query && activeChip === "all" ? "Mark all read" : "Mark these read";
+  renderHead(viewUnread.length, 0);
 
   if (!list.length) {
     feedEl.innerHTML = query ? emptyHtml("", "No stories match that search.")
@@ -1018,8 +1036,13 @@ let lastFocus = null;
 function openStory(s) {
   if (!s) return;
   const wasOpen = openId !== null;
+  // Every outlet's version of the same event, as grouped on screen.
+  const group = clusters.find((c) => c.items.some((x) => x.id === s.id))?.items || [s];
   if (openId !== s.id) {
-    openWasRead = s.is_read;
+    // Keeps the card where it was until the drawer closes, including while
+    // stepping through other outlets' versions of the same event.
+    const sameGroup = group.some((x) => x.id === openId);
+    if (!sameGroup) openWasRead = group.every((x) => x.is_read);
     openId = s.id;
   }
   // The back button / gesture closes the drawer.
@@ -1027,7 +1050,10 @@ function openStory(s) {
   else history.pushState({ story: s.id }, "");
   if (!wasOpen) lastFocus = document.activeElement;
   if (!s.summary) ensureSummary(s);
-  if (!s.is_read) markRead(s);
+  // Reading one version reads the event: the whole card moves to the read
+  // pile when the drawer closes, instead of waiting on every outlet.
+  const unread = group.filter((x) => !x.is_read);
+  if (unread.length) markRead(unread);
   render();
   readerEl.querySelector(".drawer-body")?.scrollTo({ top: 0 });
   readerEl.querySelector('[data-action="back"]')?.focus({ preventScroll: true });
@@ -1067,10 +1093,17 @@ async function ensureSummary(story) {
   if (openId === story.id) renderReader();
 }
 
-async function markRead(story) {
-  story.is_read = true;
-  const error = await saveState(story, { is_read: true });
+// Marks one story or a list of them read for this person, in one request.
+async function markRead(list) {
+  const items = [].concat(list);
+  items.forEach((s) => { s.is_read = true; });
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("story_state").upsert(
+    items.map((s) => ({ user_id: session.user.id, story_id: s.id, is_read: true, updated_at: now })),
+    { onConflict: "user_id,story_id" }
+  );
   if (error) console.error("Failed to mark read:", error);
+  return error;
 }
 
 async function toggleSaved(story) {
@@ -1104,6 +1137,25 @@ async function toggleDismissed(story) {
 
 const STATE_FIELDS = ["is_read", "saved", "saved_at", "dismissed"];
 
+async function markAllRead() {
+  const targets = viewUnread.filter((s) => !s.is_read);
+  if (!targets.length) return;
+  const n = targets.length;
+  if (!confirm(`Mark ${n} ${n === 1 ? "story" : "stories"} as read?`)) return;
+  targets.forEach((s) => { s.is_read = true; });
+  render();
+  for (let i = 0; i < targets.length; i += 500) {
+    const error = await markRead(targets.slice(i, i + 500));
+    if (error) {
+      targets.slice(i).forEach((s) => { s.is_read = false; });
+      render();
+      setRefreshStatus("Couldn't mark them read — try again");
+      setTimeout(() => setRefreshStatus(""), 4000);
+      return;
+    }
+  }
+}
+
 async function loadStories() {
   const [storyRes, stateRes, metaRes] = await Promise.all([
     supabase
@@ -1125,10 +1177,16 @@ async function loadStories() {
   // The stories table still carries the old shared columns; this person's own
   // state replaces them.
   const mine = new Map((stateRes.data || []).map((r) => [r.story_id, r]));
+  // Fresh start: stories found well before this person joined count as read
+  // unless they've touched them. Not for the admin, whose history is real.
+  const joined = Date.parse(session?.user?.created_at || "");
+  const cutoff = !isAdmin && joined ? joined - FRESH_START_DAYS * 86400000 : 0;
+  const foundAt = (s) => Date.parse(s.created_at || s.found_on || "") || 0;
   stories = (storyRes.data || []).map((s) => {
-    const st = mine.get(s.id) || {};
+    const st = mine.get(s.id);
     const out = { ...s };
-    for (const f of STATE_FIELDS) out[f] = f === "saved_at" ? st[f] || null : !!st[f];
+    for (const f of STATE_FIELDS) out[f] = f === "saved_at" ? st?.[f] || null : !!st?.[f];
+    if (!st && cutoff && foundAt(s) < cutoff) out.is_read = true;
     return out;
   });
   lastRefreshAt = Date.parse(metaRes.data?.value || "") || 0;
@@ -1328,6 +1386,7 @@ searchToggle.addEventListener("click", () => {
 });
 
 document.querySelector(".js-add").addEventListener("click", openAdd);
+markAllBtn.addEventListener("click", markAllRead);
 
 submitGo.addEventListener("click", submitStory);
 submitUrl.addEventListener("keydown", (e) => {
