@@ -321,6 +321,12 @@
   }
   .signin-card .brand{pointer-events:none;margin-bottom:2px;}
   .avatar{font-size:14px;font-weight:700;color:var(--text);}
+  .link-btn{
+    align-self:flex-start;padding:0;border:0;background:none;font-size:13px;font-weight:500;color:var(--accent);
+    text-align:left;
+  }
+  .link-btn:hover{text-decoration:underline;}
+  .link-btn:disabled{opacity:.5;cursor:default;text-decoration:none;}
   .account-email{font-size:15px;font-weight:600;color:var(--text);overflow-wrap:anywhere;}
   .people{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--border);}
   .people[hidden]{display:none;}
@@ -394,14 +400,17 @@
   <form class="add-form signin-card" id="signin-form">
     <div class="brand"><span class="brand-mark" aria-hidden="true">N</span>NewsFeed</div>
     <h2 id="signin-title">Sign in</h2>
-    <p class="note">Invite only. Enter your email and we'll send you a sign-in link.</p>
     <label class="field">Email
-      <input class="input" id="signin-email" type="email" autocomplete="email" required>
+      <input class="input" id="signin-email" type="email" autocomplete="username" required>
+    </label>
+    <label class="field">Password
+      <input class="input" id="signin-password" type="password" autocomplete="current-password">
     </label>
     <div class="note" id="signin-status" role="status"></div>
     <div class="form-btns">
-      <button class="btn primary" type="submit" id="signin-go">Email me a link</button>
+      <button class="btn primary" type="submit" id="signin-go">Sign in</button>
     </div>
+    <button class="link-btn" type="button" id="signin-link">First time, or forgot your password? Email me a sign-in link</button>
   </form>
 </section>
 
@@ -481,8 +490,28 @@
       <ul class="people-list" id="people-list"></ul>
     </section>
     <div class="form-btns">
+      <button class="btn" type="button" id="change-password">Set password</button>
       <button class="btn" value="cancel">Close</button>
       <button class="btn primary" type="button" id="sign-out">Sign out</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="password-dialog" aria-labelledby="password-title">
+  <form class="add-form" id="password-form" method="dialog">
+    <h2 id="password-title">Create a password</h2>
+    <p class="note" id="password-intro">Next time, sign in with your email and this password. No email link needed.</p>
+    <input type="email" id="password-username" autocomplete="username" hidden>
+    <label class="field">New password
+      <input class="input" id="password-new" type="password" autocomplete="new-password">
+    </label>
+    <label class="field">Confirm password
+      <input class="input" id="password-confirm" type="password" autocomplete="new-password">
+    </label>
+    <div class="note" id="password-status" role="status"></div>
+    <div class="form-btns">
+      <button class="btn" type="button" id="password-later">Later</button>
+      <button class="btn primary" type="submit" id="password-save">Save password</button>
     </div>
   </form>
 </dialog>
@@ -573,6 +602,14 @@ const signinForm = document.getElementById("signin-form");
 const signinEmail = document.getElementById("signin-email");
 const signinStatus = document.getElementById("signin-status");
 const signinGo = document.getElementById("signin-go");
+const signinPassword = document.getElementById("signin-password");
+const signinLink = document.getElementById("signin-link");
+const passwordDialog = document.getElementById("password-dialog");
+const passwordForm = document.getElementById("password-form");
+const passwordNew = document.getElementById("password-new");
+const passwordConfirm = document.getElementById("password-confirm");
+const passwordStatus = document.getElementById("password-status");
+const passwordSave = document.getElementById("password-save");
 
 const svg = (body, { fill = false, w = 2 } = {}) =>
   `<svg viewBox="0 0 24 24" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
@@ -1268,7 +1305,7 @@ scrimEl.addEventListener("click", dismissDrawer);
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape" || openId === null) return;
-  if (addDialog.open || accountDialog.open) return;
+  if (addDialog.open || accountDialog.open || passwordDialog.open) return;
   e.preventDefault();
   dismissDrawer();
 });
@@ -1419,29 +1456,112 @@ function showSignIn(message = "") {
   signinStatus.textContent = message;
 }
 
+function setSigninStatus(text, err = false) {
+  signinStatus.textContent = text;
+  signinStatus.classList.toggle("err", err);
+}
+
+// Supabase's own messages, in plain words.
+function authMessage(error) {
+  const m = error?.message || String(error);
+  if (/not_invited|database error/i.test(m)) return "That email isn't on the invite list. Ask the owner to add you.";
+  if (/rate limit|too many/i.test(m)) return "Too many sign-in emails were sent recently. Wait about an hour, or sign in with your password.";
+  if (/invalid login credentials/i.test(m)) return "Wrong email or password. First time here, or no password yet? Use the email link below.";
+  if (/email not confirmed/i.test(m)) return "Open the link in your invite email first.";
+  return m;
+}
+
 signinForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = signinEmail.value.trim().toLowerCase();
-  if (!email) return;
+  const password = signinPassword.value;
+  if (!email) return setSigninStatus("Enter your email.", true);
+  if (!password) return setSigninStatus("Enter your password, or use the email link below.", true);
   signinGo.disabled = true;
-  signinStatus.classList.remove("err");
-  signinStatus.textContent = "Sending…";
+  setSigninStatus("Signing in…");
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  signinGo.disabled = false;
+  if (error) return setSigninStatus(authMessage(error), true);
+  signinPassword.value = "";
+  setSigninStatus("");
+});
+
+signinLink.addEventListener("click", async () => {
+  const email = signinEmail.value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    signinEmail.focus();
+    return setSigninStatus("Enter your email first, then click the link again.", true);
+  }
+  signinLink.disabled = true;
+  setSigninStatus("Sending…");
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: location.origin + location.pathname },
   });
-  signinGo.disabled = false;
-  if (error) {
-    // The invite-list trigger refuses unknown emails; Supabase reports it as a database error.
-    const notInvited = /not_invited|database error/i.test(error.message);
-    signinStatus.classList.add("err");
-    signinStatus.textContent = notInvited
-      ? "That email isn't on the invite list. Ask the owner to add you."
-      : error.message;
-    return;
-  }
-  signinStatus.textContent = `Check ${email} for a sign-in link. You can close this tab.`;
+  signinLink.disabled = false;
+  if (error) return setSigninStatus(authMessage(error), true);
+  setSigninStatus(`Check ${email} for a sign-in link. Once you're in, you'll be asked to set a password.`);
 });
+
+// --- password ----------------------------------------------------------------
+// user_metadata.has_password records that a password was set here, so people
+// who came in by email link are asked once to create one.
+const hasPassword = () => !!session?.user?.user_metadata?.has_password;
+const SNOOZE_KEY = "newsfeed:passwordLater";
+const SNOOZE_DAYS = 7;
+const snoozed = () => {
+  try { return Date.now() - Number(localStorage.getItem(SNOOZE_KEY) || 0) < SNOOZE_DAYS * 86400000; }
+  catch { return false; }
+};
+
+function openPasswordDialog({ reason = "first" } = {}) {
+  const changing = hasPassword() && reason !== "recovery";
+  document.getElementById("password-title").textContent = changing ? "Change password" : "Create a password";
+  document.getElementById("password-intro").textContent = reason === "recovery"
+    ? "Choose a new password for your account."
+    : "Next time, sign in with your email and this password. No email link needed.";
+  document.getElementById("password-username").value = session?.user?.email || "";
+  document.getElementById("password-later").textContent = changing ? "Cancel" : "Later";
+  passwordNew.value = passwordConfirm.value = "";
+  passwordStatus.textContent = "";
+  passwordStatus.classList.remove("err");
+  if (accountDialog.open) accountDialog.close();
+  passwordDialog.showModal();
+  passwordNew.focus();
+}
+
+passwordForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pw = passwordNew.value;
+  const fail = (t) => { passwordStatus.textContent = t; passwordStatus.classList.add("err"); };
+  if (pw.length < 8) return fail("Use at least 8 characters.");
+  if (pw !== passwordConfirm.value) return fail("The two passwords don't match.");
+  passwordSave.disabled = true;
+  passwordStatus.classList.remove("err");
+  passwordStatus.textContent = "Saving…";
+  const { data, error } = await supabase.auth.updateUser({ password: pw, data: { has_password: true } });
+  passwordSave.disabled = false;
+  if (error && !/should be different/i.test(error.message)) return fail(authMessage(error));
+  if (data?.user) session.user = data.user;
+  else session.user.user_metadata = { ...(session.user.user_metadata || {}), has_password: true };
+  updatePasswordButton();
+  passwordDialog.close();
+  setRefreshStatus("Password saved");
+  setTimeout(() => setRefreshStatus(""), 3000);
+});
+
+// "Later" (or Esc): don't ask again in this browser for a week.
+function passwordLater() {
+  if (!hasPassword()) { try { localStorage.setItem(SNOOZE_KEY, String(Date.now())); } catch {} }
+  passwordDialog.close();
+}
+document.getElementById("password-later").addEventListener("click", passwordLater);
+passwordDialog.addEventListener("cancel", (e) => { e.preventDefault(); passwordLater(); });
+
+function updatePasswordButton() {
+  document.getElementById("change-password").textContent = hasPassword() ? "Change password" : "Set password";
+}
+document.getElementById("change-password").addEventListener("click", () => openPasswordDialog({ reason: "change" }));
 
 let booted = false;
 async function startSession(next) {
@@ -1461,7 +1581,9 @@ async function startSession(next) {
     ? "You're the admin: your saves, added stories and “Not relevant” clicks shape what everyone's feed finds."
     : "Your reads, saves and hidden stories are yours alone.";
 
+  updatePasswordButton();
   await loadStories();
+  if (!hasPassword() && !snoozed()) openPasswordDialog();
 
   // Hobby crons fire once a day and can't finish the whole loop, so the page
   // keeps the shared feed current when someone opens it.
@@ -1470,8 +1592,12 @@ async function startSession(next) {
 
 supabase.auth.onAuthStateChange((event, next) => {
   // Supabase calls back inside its own lock; run our queries after it.
-  setTimeout(() => {
-    if (next) startSession(next);
+  setTimeout(async () => {
+    if (next) {
+      await startSession(next);
+      // Arrived from a "reset password" email.
+      if (event === "PASSWORD_RECOVERY" && !passwordDialog.open) openPasswordDialog({ reason: "recovery" });
+    }
     else if (event === "SIGNED_OUT" || event === "INITIAL_SESSION") { booted = false; showSignIn(); }
   }, 0);
 });

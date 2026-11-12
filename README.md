@@ -94,8 +94,14 @@ Supabase team, a few an hour. To let anyone else sign in, connect your own
 email sender under Authentication → Emails → SMTP Settings (Resend's free
 tier works).
 
-Deploy and sign in with your email. Your first sign-in inherits the read and
-saved state stored so far. The page refreshes the shared feed on open if the
+Deploy, then use "Email me a sign-in link" on the sign-in screen. Your first
+sign-in inherits the read and saved state stored so far.
+
+**Passwords** — the first time someone arrives from an email link, the page
+asks them to create a password (or "Later", which waits a week). After that
+they sign in with email and password, so no email is sent and Supabase's
+email rate limit doesn't get in the way. Forgot it? The same email link signs
+them in, and Account → Change password sets a new one. The page refreshes the shared feed on open if the
 last full run, by anyone, was over 20 hours ago.
 
 **Inviting people** — only emails on the invite list can sign in. As the admin,
