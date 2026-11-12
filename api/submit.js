@@ -1,7 +1,7 @@
 import { BUCKETS, TAGS } from "./_lib/sources.js";
 import {
   supabase, llm, parseJsonish, stripHtml, normalizeUrl, domainOf,
-  dedupeKey, pacificToday,
+  dedupeKey, pacificToday, authorize,
 } from "./_lib/util.js";
 
 // Pull a headline, description, publisher and date out of a page's metadata.
@@ -34,10 +34,8 @@ function readMeta(html) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const expected = process.env.REFRESH_SECRET;
-  if (expected && req.headers["x-refresh-secret"] !== expected) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const auth = await authorize(req, res);
+  if (!auth) return;
 
   const { url, bucket, note = "" } = req.body || {};
 
@@ -83,14 +81,16 @@ export default async function handler(req, res) {
     const pub = meta.published ? new Date(meta.published) : null;
     const published_at = pub && !isNaN(pub.getTime()) ? pub.toISOString().slice(0, 10) : null;
 
-    // Record the teaching signal regardless of what happens to the story row.
-    const { error: sigErr } = await supabase.from("signals").insert({
+    // The admin's submissions teach (trusted source, learned terms); anyone
+    // else's just add the story to the shared feed.
+    const { error: sigErr } = !auth.admin ? { error: null } : await supabase.from("signals").insert({
       kind: "submit",
       bucket,
       url: clean,
       domain,
       headline: rawTitle.slice(0, 300),
       note: note || null,
+      user_id: auth.user?.id || null,
     });
     if (sigErr) throw new Error(`signal insert failed: ${sigErr.message}`);
 
@@ -98,8 +98,8 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         already_present: true,
-        learned: true,
-        message: "Already in your feed — recorded as a preference signal.",
+        learned: auth.admin,
+        message: auth.admin ? "Already in your feed — recorded as a preference signal." : "Already in the feed.",
       });
     }
 
@@ -156,7 +156,7 @@ Return ONLY a JSON object (no fences, no preamble):
     return res.status(200).json({
       ok: true,
       story: data,
-      learned: true,
+      learned: auth.admin,
       ...(fetchNote ? { warning: `${fetchNote} — saved with limited detail` } : {}),
     });
   } catch (err) {

@@ -282,3 +282,33 @@ export async function readFeed(feed) {
 
   return { url: feed.url, ok: true, items };
 }
+
+// --- Auth ------------------------------------------------------------------
+// Callers are either a signed-in, invited person (Supabase access token) or a
+// machine holding REFRESH_SECRET (the cron, scripts). Returns
+// { user, admin, machine } or sends a 401 and returns null.
+export async function authorize(req, res, { adminOnly = false } = {}) {
+  const secret = process.env.REFRESH_SECRET;
+  const bearer = (req.headers["authorization"] || "").replace(/^Bearer\s+/i, "");
+  if (secret && (bearer === secret || req.headers["x-refresh-secret"] === secret || req.query?.secret === secret)) {
+    return { user: null, admin: true, machine: true };
+  }
+
+  if (bearer) {
+    const { data, error } = await supabase.auth.getUser(bearer);
+    const user = data?.user;
+    if (!error && user?.email) {
+      const { data: invite } = await supabase
+        .from("allowed_emails")
+        .select("is_admin")
+        .eq("email", user.email.toLowerCase())
+        .maybeSingle();
+      if (invite && (!adminOnly || invite.is_admin)) {
+        return { user, admin: !!invite.is_admin, machine: false };
+      }
+    }
+  }
+
+  res.status(401).json({ ok: false, error: "Sign in to do that" });
+  return null;
+}
