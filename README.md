@@ -43,7 +43,15 @@ if it sits closer to the first group. Keywords match whole words now and only
 give a small boost — or do the filtering on their own if `GEMINI_API_KEY` is
 missing or the embedding call fails. `/api/refresh?mode=preview&cursor=N`
 returns one beat's scores without calling the LLM or storing anything; set
-`RELEVANCE_MARGIN` to tighten or loosen the cut.
+`RELEVANCE_MARGIN` to tighten or loosen the cut (default 0.035).
+
+Each beat's profile is a list of short single-topic lines, and a story stays on
+a beat only if that beat is its closest match among all seven — so a generic
+data center build lands on the AI beat, not on HPE. Those fixed lines are
+embedded once into `api/_lib/profile-vectors.json`; after editing them, rerun
+`GEMINI_API_KEY=… node scripts/embed-profiles.mjs`. Gemini's free tier allows
+100 embeddings a minute, so a beat embeds at most ~50 texts and the page starts
+beats 30 seconds apart: a full refresh takes about three and a half minutes.
 
 ## Stack
 

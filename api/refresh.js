@@ -333,7 +333,7 @@ export default async function handler(req, res) {
 
       // Keep only what's about this beat, by meaning (or whole-word keywords as a fallback).
       const sig = learning.signals.get(bucket.id) || { liked: [], disliked: [] };
-      const relevance = await rankByRelevance(bucket, unseen, { ...sig, antiProfile: ANTI_PROFILE });
+      const relevance = await rankByRelevance(bucket, unseen, { ...sig, antiProfile: ANTI_PROFILE, beats: BUCKETS });
       const fresh = relevance.kept;
 
       if (preview) {

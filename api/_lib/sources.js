@@ -85,24 +85,46 @@ export const REJECT_PATTERNS = [
 // Off-topic descriptions shared by every beat. A candidate closer to one of
 // these than to its beat's profile is dropped (see api/_lib/relevance.js).
 export const ANTI_PROFILE = [
-  "Enterprise campus and branch office networking: Wi-Fi access points, wireless LAN, campus switches, SD-WAN, SASE and retail store networks.",
-  "Cybersecurity products, threat research, firewalls, zero trust and security operations, not about data center infrastructure.",
-  "Collaboration, video conferencing, contact center software, observability dashboards and IT management software.",
-  "Vendor events, keynotes, webinars, certifications, training courses, partner programs and customer awards.",
-  "Telecom carriers, 5G and mobile networks, consumer broadband, smartphones and consumer technology.",
-  "Stock market commentary, share price moves, analyst ratings and investment advice.",
-  "AI models, chatbots, AI apps and software features with no data center or infrastructure angle.",
+  "Wi-Fi access points and wireless LAN for offices",
+  "Campus and branch office network switches",
+  "SD-WAN and SASE for branch offices",
+  "Cybersecurity product launch: threat detection, firewalls, zero trust",
+  "AI security, red teaming and AI model safety tools",
+  "Operational technology (OT) and industrial security",
+  "Observability, monitoring and IT management software",
+  "Video conferencing, collaboration and contact center software",
+  "Industry conference, event, webinar or trade show announcement",
+  "Analyst report rankings like Forrester Wave or Gartner Magic Quadrant",
+  "Employee career story, company culture or leadership blog",
+  "Telecom carrier, 5G and mobile network news",
+  "Consumer broadband, fiber to the home and cable providers",
+  "Stock price moves, pre-market trading and analyst ratings",
+  "Executive scandal, lawsuit or personal controversy",
+  "Sponsored content and vendor marketing",
+  "AI chatbot, AI model or AI app software feature",
+  "Backup, data recovery and business storage software",
+  "Quantum computing research and hardware",
+  "Software development, programming languages and developer tools",
 ];
 
 // Keywords match whole words (plurals included). A trailing "*" matches a prefix.
-// Each beat's `profile` is what the embedding comparison measures closeness to:
-// write it like the ideal story for that beat.
+// Each beat's `profile` is a list of short, single-topic lines; a story is scored
+// against its closest line. One idea per line separates far better than a paragraph.
+// After editing any of these, rerun scripts/embed-profiles.mjs.
 export const BUCKETS = [
   {
     id: "hpe",
     label: "HPE Networking (Juniper + Aruba)",
     keywords: ["hpe", "hewlett packard", "juniper", "aruba", "mist ai", "apstra"],
-    profile: "HPE and Juniper Networks data center networking: data center switches and routers, AI data center fabrics, Apstra automation, QFX and PTX platforms, 800G Ethernet for AI clusters, HPE's Juniper integration and networking strategy for cloud and AI infrastructure.",
+    profile: [
+      "HPE Juniper Networks data center switches and routers",
+      "Juniper Apstra data center fabric automation",
+      "HPE networking strategy after acquiring Juniper",
+      "Juniper QFX and PTX platforms for AI data centers",
+      "HPE Aruba CX data center switching",
+      "HPE and Juniper networking for AI clusters and 800G Ethernet",
+      "HPE networking earnings and data center networking revenue",
+    ],
     query: "HPE Networking OR Juniper Networks OR Aruba data center switching",
     feeds: [DCD, FIERCE, DCK, NETWORLD, REGISTER, LIGHTREADING, SDX],
   },
@@ -111,7 +133,16 @@ export const BUCKETS = [
     label: "Cisco",
     // No "catalyst": that's Cisco's campus line, and it pulled in office/branch stories.
     keywords: ["cisco", "nexus", "silicon one", "hypershield", "aci"],
-    profile: "Cisco data center networking: Nexus switches, Silicon One chips, AI networking fabrics for GPU clusters, Nexus Dashboard and ACI, high-speed optics, Cisco deals with hyperscalers, neoclouds and NVIDIA for AI infrastructure.",
+    profile: [
+      "Cisco Nexus data center switches",
+      "Cisco Silicon One networking chips",
+      "Cisco 8000 series routers for cloud and AI networks",
+      "Cisco AI networking fabric for GPU clusters with NVIDIA",
+      "Cisco Nexus Dashboard and ACI data center fabric",
+      "Cisco top-of-rack and spine switches with 400G and 800G optics",
+      "Cisco deals with hyperscalers and neoclouds for AI infrastructure",
+      "Cisco earnings and data center networking orders",
+    ],
     query: "Cisco data center networking switching",
     feeds: [DCD, FIERCE, DCK, NETWORLD, CISCO_BLOG, REGISTER, LIGHTREADING],
   },
@@ -119,7 +150,13 @@ export const BUCKETS = [
     id: "arista",
     label: "Arista",
     keywords: ["arista", "eos", "cloudvision", "etherlink"],
-    profile: "Arista Networks data center and AI networking: Etherlink AI switches, 800G and 1.6T spine and leaf platforms, EOS, AI cluster back-end and front-end networks, cloud titan customers, earnings and market share in data center switching.",
+    profile: [
+      "Arista Networks Etherlink AI switches",
+      "Arista 800G and 1.6T spine and leaf data center switches",
+      "Arista EOS and CloudVision for data center networks",
+      "Arista back-end networks for GPU training clusters",
+      "Arista earnings, cloud titan customers and data center switching market share",
+    ],
     query: "Arista Networks data center switching",
     feeds: [DCD, FIERCE, DCK, NETWORLD, ARISTA, REGISTER, NEXTPLATFORM],
   },
@@ -134,13 +171,32 @@ export const BUCKETS = [
     // AMD's own blog is bot-blocked (see note above), so its launches — e.g.
     // Helios — depend on this query and trade-press pickup to surface at all.
     query: "Broadcom Tomahawk OR Nvidia Spectrum OR AMD Helios OR networking silicon OR co-packaged optics",
-    profile: "Networking and data center silicon: switch ASICs like Broadcom Tomahawk and Jericho, NVIDIA Spectrum-X and InfiniBand switches, SmartNICs and DPUs, SerDes, co-packaged and pluggable optics, 800G and 1.6T, rack-scale AI systems such as NVL72 and AMD Helios.",
+    profile: [
+      "Broadcom Tomahawk and Jericho switch chips",
+      "NVIDIA Spectrum-X Ethernet and Quantum InfiniBand switches",
+      "SmartNICs, DPUs and SuperNICs for data centers",
+      "Co-packaged optics and silicon photonics for switches",
+      "800G and 1.6T optical transceivers and SerDes",
+      "Rack-scale AI systems like NVIDIA NVL72 and AMD Helios",
+      "Marvell and AMD networking chips for AI data centers",
+      "Data center CPU, GPU and AI accelerator hardware launches",
+    ],
     feeds: [NVIDIA, STH, DCD, NEXTPLATFORM, REGISTER, DCK, BLOCKSFILES],
   },
   {
     id: "ai_industry",
     label: "AI Infrastructure, Neoclouds & Data Center Builds",
-    profile: "AI data center buildout: hyperscaler and neocloud GPU clusters and capex, CoreWeave, Crusoe, Lambda, Nebius and Vultr capacity and funding, new data center campuses measured in megawatts and gigawatts, power and grid deals, liquid cooling, colocation from Equinix and Digital Realty.",
+    profile: [
+      "Neocloud GPU cloud providers like CoreWeave, Crusoe, Lambda, Nebius, Nscale and Vultr",
+      "Neocloud funding, IPOs, contracts and GPU capacity deals",
+      "Hyperscaler AI data center capex and buildout",
+      "New AI data center campus with hundreds of megawatts or gigawatts of power",
+      "Data center power supply, grid connections and energy deals",
+      "Liquid cooling and data center cooling technology",
+      "Colocation providers like Equinix and Digital Realty expanding",
+      "AI compute agreements between AI labs and cloud providers",
+      "Local opposition, zoning and moratoriums on data center construction",
+    ],
     keywords: [
       "hyperscaler", "ai data center", "ai infrastructure", "gpu cluster",
       "training cluster", "inference cluster", "ai supercomputer",
@@ -163,7 +219,13 @@ export const BUCKETS = [
     label: "Space Data Centers",
     keywords: ["orbital", "space data cent*", "satellite", "starcloud", "in-orbit", "leo"],
     query: "orbital space data center satellite compute",
-    profile: "Data centers in space: orbital and in-orbit compute, satellites carrying GPUs or servers, startups like Starcloud building space-based data centers, launch plans, power and cooling for compute in orbit, lunar data storage.",
+    profile: [
+      "Orbital data centers: compute and GPUs in space",
+      "Satellites carrying servers for in-orbit computing",
+      "Space-based data center startups like Starcloud",
+      "Lunar and space-based data storage",
+      "Power, cooling and launch plans for data centers in orbit",
+    ],
     feeds: [DCD, DCK, REGISTER],
   },
   {
@@ -176,7 +238,16 @@ export const BUCKETS = [
       // OpenAI's Multipath Reliable Connection transport for its supercomputer fabric.
       "multipath reliable connection", "mrc", "multipath transport",
     ],
-    profile: "Data center and AI networking standards and transports: RDMA and RoCE, Ultra Ethernet Consortium, InfiniBand, NVLink and UALink, Multipath Reliable Connection (MRC), congestion control, load balancing and topology for GPU clusters, IEEE 802.3 and OCP specifications.",
+    profile: [
+      "RDMA and RoCE in data center networks",
+      "Ultra Ethernet Consortium specification",
+      "InfiniBand versus Ethernet for AI clusters",
+      "NVLink and UALink scale-up interconnects",
+      "Multipath Reliable Connection (MRC) transport for AI supercomputers",
+      "Congestion control and load balancing in GPU cluster networks",
+      "IEEE 802.3 Ethernet and OCP networking specifications",
+      "Data center network topology and AI fabric design from hyperscaler engineering blogs",
+    ],
     query: [
       "RDMA OR RoCE OR Ultra Ethernet Consortium OR InfiniBand OR NVLink standards",
       '"Multipath Reliable Connection" OR "MRC protocol" OR "multipath transport" AI networking',

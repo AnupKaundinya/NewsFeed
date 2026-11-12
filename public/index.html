@@ -1080,9 +1080,17 @@ async function triggerRefresh() {
   let total = BUCKETS.length - 1;
   const problems = [];
 
+  // Each beat spends up to ~50 of Gemini's 100 free embedding requests a
+  // minute, so beats start at least 30 seconds apart.
+  const BEAT_SPACING_MS = 30000;
+  let lastStart = 0;
+
   try {
     while (cursor !== null) {
       setRefreshStatus(`Checking feeds · ${Math.min(cursor + 1, total)} of ${total}`);
+      const wait = lastStart + BEAT_SPACING_MS - Date.now();
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      lastStart = Date.now();
       const res = await apiPost(`/api/refresh?cursor=${cursor}`);
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error || "Refresh failed");
